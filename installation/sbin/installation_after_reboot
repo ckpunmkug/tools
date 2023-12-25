@@ -16,9 +16,9 @@
 /usr/bin/apt install galculator zathura ristretto
 /usr/bin/apt install alsa-utils pulseaudio mplayer mpg123
 
-/usr/sbin/alsactl -L init
+! /usr/sbin/alsactl -L init
 
-adduser user
+adduser --gecos "" user
 chmod 700 /home/user
 adduser user sudo
 adduser user audio
