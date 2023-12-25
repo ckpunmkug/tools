@@ -18,12 +18,9 @@
 
 /usr/sbin/alsactl -L init
 
-adduser --gecos "" user
-chmod 700 /home/user
-
 adduser user
+chmod 700 /home/user
 adduser user sudo
 adduser user audio
 
 echo "Base installation complete"
-
