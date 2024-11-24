@@ -71,7 +71,7 @@ else
 	fi
 	export DOCROOT="${1}"
 	
-	export PASSWORD=`/usr/bin/apg -n 1 -m 6 -x 6 -M NCL`
+	export PASSWORD=`/usr/bin/php -r '$b=[97,65,48];$e=[122,90,57];$s="";$c=5;while($c){$c--;$r=rand(0,2);$s.=chr(rand($b[$r],$e[$r]));}echo($s);'`
 fi
 
 #}}}
@@ -105,7 +105,7 @@ if(!is_string($password)) {
 	exit(255);
 }
 
-$authorization = function(string $user, $password)
+$authorization = function(string $user, string $password)
 {
 	$headers = apache_request_headers();
 	$r = array_key_exists('Authorization', $headers);
@@ -124,7 +124,7 @@ $authorization = function(string $user, $password)
 		return(false);
 	}
 	
-	$s = base64_encode("{$user}:${password}");	
+	$s = base64_encode("{$user}:{$password}");	
 	if (strcmp($credentials, $s) !== 0) {
 		return(false);
 	}
