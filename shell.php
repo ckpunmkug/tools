@@ -71,27 +71,6 @@ class Initialization
 
 }//}}}//
 
-class Test
-{//{{{//
-	
-	static function fullscreen()
-	{//{{{//
-		global $Page;
-		$Page->body .= 
-///////////////////////////////////////////////////////////////{{{//
-<<<HEREDOC
-<button name="fullscreen">FullScreen</button>
-HEREDOC;
-///////////////////////////////////////////////////////////////}}}//
-		$Page->script .= 
-///////////////////////////////////////////////////////////////{{{//
-<<<HEREDOC
-HEREDOC;
-///////////////////////////////////////////////////////////////}}}//
-	}//}}}//
-	
-}//}}}//
-
 class HTML
 {//{{{
 
@@ -305,10 +284,10 @@ div[name='header'] {
 }
 button.tab {
 	height: 30px;
-	border-top: solid 1px #5D0;
+	border-top: solid 1px #4C0;
 	border-bottom: solid 1px #000;
-	border-left: solid 3px #5D0;
-	border-right: solid 3px #5D0;
+	border-left: solid 3px #4C0;
+	border-right: solid 3px #4C0;
 	border-radius: 2px;
 }
 div[name='body'] {
@@ -318,7 +297,7 @@ div[name='body'] {
 	width: 100%;
 	height: calc(100% - 29px);
 	background: none;
-	border-top: solid 1px #5D0;
+	border-top: solid 1px #4C0;
 }
 
 HEREDOC;
