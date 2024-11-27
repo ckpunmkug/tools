@@ -30,7 +30,7 @@ class Initialization
 	function security()
 	{//{{{//
 	
-		header("Content-Security-Policy: frame-ancestors none;");
+		header("Content-Security-Policy: frame-ancestors 'self';");
 
 		session_start();
 		if(@is_string($_SESSION["csrf_token"]) != true) {
@@ -70,6 +70,8 @@ class Initialization
 	}//}}}//
 
 }//}}}//
+
+$Initialization = new Initialization();
 
 class HTML
 {//{{{
@@ -195,19 +197,105 @@ HEREDOC;
 	
 }//}}}
 
+HTML::$style = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+
+* 
+	{/*{{{*/
+		font-family: 'Terminus';
+		font-size: 20px;
+		line-height: 20px;
+		outline: none;
+		border: none;
+		background-color: #000;
+		color: #4C0;
+	}/*}}}*/
+
+::selection
+	{/*{{{*/
+		background-color: #4C0;
+		color: #000;
+	}/*}}}*/
+
+body 
+	{/*{{{*/
+		margin: 0px;
+		padding: 0px;
+	}/*}}}*/
+
+button 
+	{/*{{{*/
+		height: 24px;
+		margin: 3px;
+		background: #000;
+		color: #4C0;
+		border: solid 2px #4C0;
+		border-radius: 2px;
+	}/*}}}*/
+
+button.char
+	{/*{{{*/
+		width: 24px;
+	}/*}}}*/
+
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+
+$HTML = new HTML();
+
 class Main
 {//{{{
 
+	static $style = '';
+	static $script = '';
+	static $body = '';
+
+	function initialization()
+	{//{{{//
+	
+		$string = file_get_contents(__FILE__);
+		$offset = __COMPILER_HALT_OFFSET__;
+		
+		$favicon = substr($string, $offset, 264);
+		$terminus = substr($string, ($offset+264), 17980);
+		
+		$string = 
+/////////////////////////////////////////////////////////////////
+<<<HEREDOC
+<link rel="icon" href="data:image/x-icon;base64,{$favicon}">
+
+HEREDOC;
+/////////////////////////////////////////////////////////////////
+		HTML::$head .= $string;
+
+		 $string = 
+/////////////////////////////////////////////////////////////////
+<<<HEREDOC
+@font-face {
+	font-family: 'Terminus';
+	src: url(data:font/truetype;base64,{$terminus});
+}
+
+HEREDOC;
+/////////////////////////////////////////////////////////////////	
+		HTML::$style = $string.HTML::$style;
+		
+	}//}}}//
+
 	function __construct()
 	{//{{{
-	
+		
+		$this->initialization();
+		
 		$request_method = @strval($_SERVER["REQUEST_METHOD"]);
 		switch($request_method) {
 		
 			case('GET'):
 				$return = $this->handle_get_request();
 				if($return !== true) {
-					trigger_error("Handle get request failed", E_USER_ERROR);
+					trigger_error("Handle get request failed", E_USER_WARNING);
+					exit(255);
 				}
 				exit(0);
 				
@@ -226,22 +314,26 @@ class Main
 	
 	function handle_get_request()
 	{//{{{
+	
 		$page = '';
 		if(@is_string($_GET["page"]) == true) {
 			$page = $_GET["page"];
 		}
 		switch($page) {
+		
 			case(''):
-				$return = $this->main();
+				$return = Main::page();
 				if($return !== true) {
-					trigger_error("Can't create 'main' page", E_USER_WARNING);
+					trigger_error("Can't create 'Main' page", E_USER_WARNING);
 					return(false);
 				}
 				return(true);
+				
 			default:
 				trigger_error("Unsupported 'page'", E_USER_WARNING);
 				return(false);
 		}
+		
 	}//}}}
 	
 	function handle_post_request()
@@ -261,74 +353,98 @@ class Main
 		}
 	}//}}}
 	
-	function main()
+	static function page()
 	{//{{{
+	
+		HTML::$title = 'Shell';
 		
-		HTML::$style .= 
+		HTML::$style .= Main::$style;
+		
+		HTML::$script .= Main::$script;
+		
+		$_ = [
+			"url_path" => htmlentities(URL_PATH),
+		];
+		HTML::$body .= 
+/////////////////////////////////////////////////////////////////
+<<<HEREDOC
+
+<div name="container">
+	<div name="body">
+		<iframe name="editor" src="{$_['url_path']}?page=editor" width="100%" height="100%"></iframe>
+	</div>
+	<div name="header">
+		&nbsp;
+		<button class="tab">editor</button>
+		<button name="fullscreen" class="char">F</button>
+		<button name="console" class="char">C</button>
+	</div>
+</div>
+
+HEREDOC;
+/////////////////////////////////////////////////////////////////
+		return(true);
+		
+	}//}}}
+
+}//}}}
+
+Main::$style = 
 ///////////////////////////////////////////////////////////////{{{//
 <<<HEREDOC
-div[name='container'] {
+
+div[name='container'] 
+{/*{{{*/
 	position: absolute;
 	left: 0px;
 	top: 0px;
 	width: 100%;
 	height: 100%;
-}
-div[name='header'] {
-	position: absolute;
-	left: 0px;
-	top: 0px;
-	width: 100%;
-	height: 30px;
-	background: none;
-}
-button.tab {
-	height: 30px;
-	border-top: solid 1px #4C0;
-	border-bottom: solid 1px #000;
-	border-left: solid 3px #4C0;
-	border-right: solid 3px #4C0;
-	border-radius: 2px;
-}
-div[name='body'] {
-	position: absolute;
-	left: 0px;
-	top: 29px;
-	width: 100%;
-	height: calc(100% - 29px);
-	background: none;
-	border-top: solid 1px #4C0;
-}
+}/*}}}*/
 
-HEREDOC;
-///////////////////////////////////////////////////////////////}}}//
-		
-		HTML::$body .= 
-///////////////////////////////////////////////////////////////{{{//
-<<<HEREDOC
-<div name="container">
-	<div name="body">
-EDITOR
-	</div>
-	<div name="header">
-		&nbsp;
-		<button class="tab">editor</button>
-		<button name="fullscreen" class="button">F</button>
-		<button name="console" class="button">C</button>
-	</div>
-</div>
+div[name='header'] 
+	{/*{{{*/
+		position: absolute;
+		left: 0px;
+		top: 0px;
+		width: 100%;
+		height: 31px;
+		background: none;
+		display: flex;
+		align-items: top;
+	}/*}}}*/
+
+button.tab 
+	{/*{{{*/
+		height: 29px;
+		border-bottom: solid 2px #000;
+		margin-bottom: 0px;
+		border-radius: 2px;
+	}/*}}}*/
+
+div[name='body'] 
+	{/*{{{*/
+		position: absolute;
+		left: 0px;
+		top: 31px;
+		width: 100%;
+		height: calc(100% - 31px);
+		background: none;
+		border-top: solid 1px #4C0;
+	}/*}}}*/
 
 HEREDOC;
 ///////////////////////////////////////////////////////////////}}}//
 
-		HTML::$script .= 
+Main::$script = 
 ///////////////////////////////////////////////////////////////{{{//
 <<<HEREDOC
+
 var div, button;
 
 function windowOnLoad()
 {//{{{//
-
+	
 	div = document.querySelector("div[name='container']");
 	button = document.querySelector("button[name='fullscreen']");
 	
@@ -343,115 +459,39 @@ function windowOnLoad()
 	
 }//}}}//
 
-window.addListener("load", windowOnLoad);
-
-HEREDOC;
-///////////////////////////////////////////////////////////////}}}//
-
-		return(true);
-	}//}}}
-
-}//}}}
-
-function main()
-{//{{{//
-
-	$CLASS = [];
-	
-	array_push($CLASS, new Initialization());
-	
-	array_push($CLASS, new HTML());
-	
-	$string = file_get_contents(__FILE__);
-	$offset = __COMPILER_HALT_OFFSET__;
-		
-	$favicon = substr($string, $offset, 264);
-	$terminus = substr($string, ($offset+264), 17980);
-		
-	HTML::$head .= // favicon 
-///////////////////////////////////////////////////////////////{{{//
-<<<HEREDOC
-<link rel="icon" href="data:image/x-icon;base64,{$favicon}">
-HEREDOC;
-///////////////////////////////////////////////////////////////}}}//
-
-	HTML::$style .= //terminus
-///////////////////////////////////////////////////////////////{{{//
-<<<HEREDOC
-@font-face {
-	font-family: 'Terminus';
-	src: url(data:font/truetype;base64,{$terminus});
-}
-HEREDOC;
-///////////////////////////////////////////////////////////////}}}//	
-	
-	HTML::$title = 'Shell';
-	
-	HTML::$style .= 
-///////////////////////////////////////////////////////////////{{{//
-<<<HEREDOC
-* {
-	font-family: 'Terminus';
-	font-size: 20px;
-	line-height: 20px;
-	outline: none;
-	border: none;
-	background-color: #000;
-	color: #4C0;
-}
-::selection	{
-	background-color: #4C0;
-	color: #000;
-}
-body {
-	margin: 0px;
-	padding: 0px;
-}
-button.button {
-	margin: 2px;
-	background: #000;
-	color: #4C0;
-	border-top: solid 1px #4C0;
-	border-bottom: solid 1px #4C0;
-	border-left: solid 3px #4C0;
-	border-right: solid 3px #4C0;
-	border-radius: 2px;
-}
-
-HEREDOC;
-///////////////////////////////////////////////////////////////}}}//
-	
-	HTML::$script .= 
-///////////////////////////////////////////////////////////////{{{//
-<<<HEREDOC
-function windowOnLoad(event)
-{//{{{//
-	
-}//}}}//
 window.addEventListener("load", windowOnLoad);
 
-function windowOnKeyDown(event)
-{//{{{//
-	/*
-	if (event.ctrlKey === false && event.altKey === false && event.shiftKey === false) {
-		event.preventDefault();
-		console.log("keyCode: ", event.keyCode);
-		return(null);
-	}
-	*/
-}//}}}//
-window.addEventListener("keydown", windowOnKeyDown);
-
 HEREDOC;
 ///////////////////////////////////////////////////////////////}}}//
+
+class Editor
+{//{{{//
 	
-	array_push($CLASS, new Main());
-	
-	return(true);
+	static $style = '';
+	static $script = '';
+	static $body = '';
 	
 }//}}}//
 
-main();
+Editor::$style = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+
+Editor::$script = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+
+Editor::$body = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+
+$Main = new Main();
 
 // favicon.ico : 264
 // terminus.ttf : 17980
