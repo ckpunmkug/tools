@@ -227,7 +227,7 @@ body
 button 
 	{/*{{{*/
 		height: 24px;
-		margin: 3px;
+		margin: 4px;
 		background: #000;
 		color: #4C0;
 		border: solid 2px #4C0;
@@ -328,6 +328,14 @@ HEREDOC;
 					return(false);
 				}
 				return(true);
+		
+			case('editor'):
+				$return = Editor::page();
+				if($return !== true) {
+					trigger_error("Can't create 'Editor' page", E_USER_WARNING);
+					return(false);
+				}
+				return(true);
 				
 			default:
 				trigger_error("Unsupported 'page'", E_USER_WARNING);
@@ -369,15 +377,15 @@ HEREDOC;
 /////////////////////////////////////////////////////////////////
 <<<HEREDOC
 
-<div name="container">
-	<div name="body">
-		<iframe name="editor" src="{$_['url_path']}?page=editor" width="100%" height="100%"></iframe>
-	</div>
+<div name="fullscreen">
 	<div name="header">
 		&nbsp;
 		<button class="tab">editor</button>
 		<button name="fullscreen" class="char">F</button>
 		<button name="console" class="char">C</button>
+	</div>
+	<div name="body">
+		<iframe name="subwindow" src="{$_['url_path']}?page=editor" width="100%" height="100%"></iframe>
 	</div>
 </div>
 
@@ -405,10 +413,11 @@ div[name='container']
 div[name='header'] 
 	{/*{{{*/
 		position: absolute;
+		z-index: 2;
 		left: 0px;
 		top: 0px;
 		width: 100%;
-		height: 31px;
+		height: 32px;
 		background: none;
 		display: flex;
 		align-items: top;
@@ -417,18 +426,18 @@ div[name='header']
 button.tab 
 	{/*{{{*/
 		height: 29px;
-		border-bottom: solid 2px #000;
+		border-bottom: solid 1px #000;
 		margin-bottom: 0px;
-		border-radius: 2px;
 	}/*}}}*/
 
 div[name='body'] 
 	{/*{{{*/
 		position: absolute;
+		z-index: 1;
 		left: 0px;
-		top: 31px;
+		top: 32px;
 		width: 100%;
-		height: calc(100% - 31px);
+		height: calc(100% - 32px);
 		background: none;
 		border-top: solid 1px #4C0;
 	}/*}}}*/
@@ -438,24 +447,53 @@ HEREDOC;
 
 Main::$script = 
 ///////////////////////////////////////////////////////////////{{{//
-<<<HEREDOC
+<<<'HEREDOC'
 
-var div, button;
+var $CONTAINER = 
+{//{{{//
+	
+	fullscreen: null
+	,header: null
+	,body: null
+	
+};//}}}//
+
+var $BUTTON =
+{//{{{//
+	
+	fullscreen: null
+	
+};//}}}//
+
+function switchFullscreen()
+{//{{{//
+
+	var $return = document.fullscreenEnabled;
+	if($return === true) {
+		$return = document.fullscreenElement;
+		if($return === null) {
+			$CONTAINER.fullscreen.requestFullscreen();
+			return(true);
+		}
+		else {
+			document.exitFullscreen();
+			return(true);
+		}
+	}
+	else {
+		alert("The 'fullscreen' mode is not enabled");
+		return(false);
+	}
+	return(false);
+
+}//}}}//
 
 function windowOnLoad()
 {//{{{//
 	
-	div = document.querySelector("div[name='container']");
-	button = document.querySelector("button[name='fullscreen']");
-	
-	button.addEventListener("click", function() {
-		if(div.requestFullscreen) {
-			div.requestFullscreen();
-		}
-		else {
-			alert("gepbMO!");
-		}
-	});
+	$CONTAINER.fullscreen = document.querySelector("div[name='fullscreen']");
+	$BUTTON.fullscreen = document.querySelector("button[name='fullscreen']");
+	$BUTTON.fullscreen.addEventListener("click", switchFullscreen); 
 	
 }//}}}//
 
@@ -469,23 +507,38 @@ class Editor
 	
 	static $style = '';
 	static $script = '';
-	static $body = '';
+
+	static function page()
+	{//{{{//
+	
+		HTML::$style .= Editor::$style;
+		
+		HTML::$body .= 
+/////////////////////////////////////////////////////////////////
+<<<HEREDOC
+<textarea name="editor"></textarea>
+HEREDOC;
+/////////////////////////////////////////////////////////////////
+		return(true);
+	}//}}}//
 	
 }//}}}//
 
 Editor::$style = 
 ///////////////////////////////////////////////////////////////{{{//
 <<<HEREDOC
+textarea
+	{/*{{{*/
+		position: absolute;
+		left: 0px;
+		top: 0px;
+		border: solid 1px red;
+	}/*}}}*/
+
 HEREDOC;
 ///////////////////////////////////////////////////////////////}}}//
 
 Editor::$script = 
-///////////////////////////////////////////////////////////////{{{//
-<<<HEREDOC
-HEREDOC;
-///////////////////////////////////////////////////////////////}}}//
-
-Editor::$body = 
 ///////////////////////////////////////////////////////////////{{{//
 <<<HEREDOC
 HEREDOC;
