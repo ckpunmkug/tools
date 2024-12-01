@@ -18,15 +18,6 @@ class Initialization
 		
 	}//}}}//
 	
-	function __destruct()
-	{//{{{//
-	
-		if(PHP_SAPI == 'cli-server') {
-			file_put_contents('php://stderr', "\n");
-		}
-		
-	}//}}}//
-	
 	function security()
 	{//{{{//
 	
@@ -237,6 +228,14 @@ button
 button.char
 	{/*{{{*/
 		width: 24px;
+	}/*}}}*/
+
+textarea
+	{/*{{{*/
+		width: 960px;
+		height: 260px;
+		background: black;
+		border-bottom: solid 1px red;
 	}/*}}}*/
 
 HEREDOC;
@@ -488,12 +487,33 @@ function switchFullscreen()
 
 }//}}}//
 
+function textareaOnFocus($textarea)
+{//{{{//
+
+	var $DOMRect = $CONTAINER.header.getBoundingClientRect();
+	var $headerHeight = $DOMRect.height;
+	
+	$CONTAINER.body.style.setProperty("top", "0px");
+	$CONTAINER.body.style.setProperty("z-index", "3");
+	$CONTAINER.body.style.setProperty("height", "100%");
+	$CONTAINER.body.style.setProperty("border", "none");
+	
+}//}}}//
+
+function textareaOnFocusOut($textarea)
+{//{{{//
+	//alert('onFocusOut');
+}//}}}//
+
 function windowOnLoad()
 {//{{{//
 	
 	$CONTAINER.fullscreen = document.querySelector("div[name='fullscreen']");
 	$BUTTON.fullscreen = document.querySelector("button[name='fullscreen']");
 	$BUTTON.fullscreen.addEventListener("click", switchFullscreen); 
+	
+	$CONTAINER.header = document.querySelector("div[name='header']");
+	$CONTAINER.body = document.querySelector("div[name='body']");
 	
 }//}}}//
 
@@ -513,6 +533,8 @@ class Editor
 	
 		HTML::$style .= Editor::$style;
 		
+		HTML::$script .= Editor::$script;
+		
 		HTML::$body .= 
 /////////////////////////////////////////////////////////////////
 <<<HEREDOC
@@ -527,12 +549,16 @@ HEREDOC;
 Editor::$style = 
 ///////////////////////////////////////////////////////////////{{{//
 <<<HEREDOC
+
+body {
+	background-color: #00F;
+}
+
 textarea
 	{/*{{{*/
 		position: absolute;
 		left: 0px;
 		top: 0px;
-		border: solid 1px red;
 	}/*}}}*/
 
 HEREDOC;
@@ -540,7 +566,21 @@ HEREDOC;
 
 Editor::$script = 
 ///////////////////////////////////////////////////////////////{{{//
-<<<HEREDOC
+<<<'HEREDOC'
+
+var $TEXTAREA = [];
+
+function windowOnLoad(event)
+{//{{{//
+
+	$TEXTAREA[0] = document.querySelector("textarea[name='editor']");
+	$TEXTAREA[0].addEventListener("focus", window.parent.textareaOnFocus.bind(null, $TEXTAREA[0]));
+	$TEXTAREA[0].addEventListener("focusout", window.parent.textareaOnFocusOut.bind(null, $TEXTAREA[0]));
+	
+}//}}}//
+
+window.addEventListener("load", windowOnLoad);
+
 HEREDOC;
 ///////////////////////////////////////////////////////////////}}}//
 
