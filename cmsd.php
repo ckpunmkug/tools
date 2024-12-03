@@ -232,10 +232,11 @@ button.char
 
 textarea
 	{/*{{{*/
-		width: 960px;
-		height: 260px;
+		border: solid 1px red;
+		width: 800px;
+		height: 600px;
 		background: black;
-		border-bottom: solid 1px red;
+		color: #AAA;
 	}/*}}}*/
 
 HEREDOC;
@@ -550,10 +551,6 @@ Editor::$style =
 ///////////////////////////////////////////////////////////////{{{//
 <<<HEREDOC
 
-body {
-	background-color: #00F;
-}
-
 textarea
 	{/*{{{*/
 		position: absolute;
@@ -575,7 +572,7 @@ function windowOnLoad(event)
 
 	$TEXTAREA[0] = document.querySelector("textarea[name='editor']");
 	$TEXTAREA[0].addEventListener("focus", window.parent.textareaOnFocus.bind(null, $TEXTAREA[0]));
-	$TEXTAREA[0].addEventListener("focusout", window.parent.textareaOnFocusOut.bind(null, $TEXTAREA[0]));
+//	$TEXTAREA[0].addEventListener("focusout", window.parent.textareaOnFocusOut.bind(null, $TEXTAREA[0]));
 	
 }//}}}//
 

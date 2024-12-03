@@ -1,0 +1,50 @@
+<?php
+
+require_once(__DIR__.'/include/class/Initialization.php');
+$Initialization = new Initialization;
+
+require_once(__DIR__.'/include/class/HTML.php');
+$HTML = new HTML();
+
+HTML::$style .= 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+
+*
+	{/*{{{*/
+		font-family: sans;
+		font-size: 16px;
+		background: #FFF;
+		color: #000;
+	}/*}}}*/
+
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+
+HTML::$script .= 
+///////////////////////////////////////////////////////////////{{{//
+<<<'HEREDOC'
+
+unction windowOnLoad(event)
+{//{{{//
+
+	
+}//}}}//
+
+window.addEventListener("load", windowOnLoad);
+
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+
+HTML::$body .=
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+
+<a href="upload.php"
+	><button>Upload</button
+></a>
+
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+
+
