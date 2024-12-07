@@ -1,0 +1,78 @@
+@font-face 
+	{/*{{{*/
+		font-family: 'Hack';
+		src: url('../font/hack.woff2');
+	}/*}}}*/
+
+*
+	{/*{{{*/
+		font-size: 16px;
+		font-family: 'Hack';
+		border: none;
+		outline: none;
+		background: none;
+		color: #CCC;
+		caret-color: #FFF;
+	}/*}}}*/
+	
+::selection
+	{/*{{{*/
+		background: #AAA;
+		color: #000;
+	}/*}}}*/
+
+body
+	{/*{{{*/
+		background: #000;
+		color: #AAA;
+	}/*}}}*/
+
+dialog
+	{/*{{{*/
+		position: absolute;
+		left: 0px;
+		top: 0px;
+		height: 100%;
+		width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: none;
+		overflow: scroll;
+	}/*}}}*/
+
+fieldset
+	{/*{{{*/
+		padding: 1ch;
+		background: #222;
+		border-radius: 4px;
+	}/*}}}*/
+	
+input[type='text']
+	{/*{{{*/
+		width: 48ch;
+		background: #000;
+		color: #AAA;
+		padding: 1ch 1ch;
+		border-radius: 4px;
+	}/*}}}*/
+
+button
+	{/*{{{*/
+		padding: 1ch;
+		background: #555;
+		border-radius: 4px;
+	}/*}}}*/
+button:active 
+	{/*{{{*/
+		background: #DDD;
+		color: #FFF;
+	}/*}}}*/
+
+hr
+	{/*{{{*/
+		height: 1ch;
+		margin: 0px;
+		padding: 0px;
+	}/*}}}*/
+	

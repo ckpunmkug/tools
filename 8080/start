@@ -1,7 +1,7 @@
 #!/bin/sh
 #<?php ob_end_clean(); goto start; ?>
 
-WEB_SERVER_CONFIG="${HOME}/.config/v3bd3w/8080.sh"
+WEB_SERVER_CONFIG="${HOME}/.config/8080.sh"
 
 FILE=`/usr/bin/realpath $0`
 DIR=`/usr/bin/dirname ${FILE}`
