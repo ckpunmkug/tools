@@ -1,0 +1,8 @@
+#!/bin/sh
+
+STR=`/usr/bin/xdotool getactivewindow getwindowgeometry --shell`
+eval ${STR}
+X=`echo $(((1366-${WIDTH})/2))`
+Y=`echo $(((768-${HEIGHT})/2))`
+/usr/bin/xdotool getactivewindow windowmove ${X} ${Y}
+

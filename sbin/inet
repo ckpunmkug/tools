@@ -1,0 +1,62 @@
+#!/bin/sh
+
+eth='enp2s0'
+
+FILE=`/usr/bin/realpath $0`
+DIR=`/usr/bin/dirname ${FILE}`
+BASENAME=`basename ${FILE}`
+
+HELP="
+Description: Connect, disconnect to internet network.
+Usage: ${BASENAME} <on|off>
+"
+if test "${1}" = "-h" -o "${1}" = "--help"
+then
+	echo "${HELP}"
+	exit 0
+fi
+
+error ()
+{
+	/usr/bin/echo "Error: ${BASENAME} - ${1}" >&2
+	return 255
+}
+
+notice ()
+{
+	/usr/bin/echo "${BASENAME} - ${1}"
+	return 0
+}
+
+run ()
+{
+
+	COMMAND="${*}"
+	echo "\n> ${COMMAND}"
+	${COMMAND}
+	if test ${?} -ne 0
+	then
+		error "Running the command failed with an error"
+		exit 255
+	fi
+	return 0
+	
+}
+
+if test "${1}" = "on"
+then
+	run /usr/sbin/dhclient -v ${eth}
+	run /usr/sbin/ifconfig ${eth}
+	run /usr/bin/netstat -a -n -t -u -p
+	exit 0
+fi
+
+if test "${1}" = "off"
+then
+	run /usr/sbin/dhclient -x
+	run /usr/sbin/ifconfig ${eth}
+	run /usr/bin/netstat -a -n -t -u -p
+	exit 0
+fi
+
+exit 255

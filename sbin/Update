@@ -1,0 +1,22 @@
+#!/bin/sh
+
+run ()
+{
+
+	COMMAND="${*}"
+	echo "\n> ${COMMAND}"
+	${COMMAND}
+	if test ${?} -ne 0
+	then
+		error "Running the command failed with an error"
+		exit 255
+	fi
+	return 0
+	
+}
+
+run /usr/sbin/ntpdate us.pool.ntp.org
+run /usr/sbin/hwclock -w
+run /usr/bin/apt update
+run /usr/bin/apt upgrade
+

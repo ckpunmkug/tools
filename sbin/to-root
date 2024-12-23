@@ -1,0 +1,4 @@
+#!/bin/sh
+chown -R root:root ${1}
+chmod -R u=rwX ${1}
+chmod og=rX ${1}

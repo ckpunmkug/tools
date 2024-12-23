@@ -1,0 +1,3 @@
+/usr/bin/xsel -c -p
+/usr/bin/xsel -c -s
+/usr/bin/xsel -c -b

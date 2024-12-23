@@ -1,0 +1,12 @@
+export XAUTHORITY="/var/local/Xauthority"
+export DISPLAY=":0.0"
+
+/usr/bin/chromium \
+	--incognito \
+	--save-page-as-mhtml \
+	--password-store=basic \
+	--disable-gpu \
+	&
+
+exit $?
+
