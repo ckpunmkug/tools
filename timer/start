@@ -209,26 +209,30 @@ if (defined('SCREENSHOTS')) // Create directory for screenshots
 
 function get_current_workspace() 
 {//{{{
+	if(!defined('WORKSPACES')) {
+		return(NULL);
+	}
 	$command = wmctrl." -d";
 	$output = [];
 	$return = 0;
 	exec($command, $output, $return);
 	if ($return != 0) {
 		trigger_error("wmctrl exec error", E_USER_WARNING);
-		return -1;
+		return false;
 	}
 	foreach ($output as $string) {
 		if (preg_match('/^(\w+)\s+\*\s+.+$/', $string, $matches) == 1)
 			return intval($matches[1]);
 	}
-	return -2;
+	trigger_error("wmctrl can't give workspace");
+	return false;
 }//}}}
 
-function take_screenshot(int $minute, int $workspace) 
+function take_screenshot(int $minute) 
 {//{{{
 	if (!defined('SCREENSHOTS'))
 		return true;
-	$filename = sprintf("%02d-%02d.png", $minute, $workspace);
+	$filename = sprintf("%02d.png", $minute);
 	$command = import." -window root ".SCREENSHOTS.'/'.DATE."/{$filename}";
 	$return = 0;
 	passthru($command, $return);
@@ -254,6 +258,23 @@ pcntl_signal(SIGINT, function($signal)
 	$start += $end-$begin;
 });//}}}
 
+function echo_time(int $minutes, int &$count)
+{//{{{
+
+	$date = date("Y.m.d-H:i");
+	$current_workspace = get_current_workspace();
+	if (
+		is_int($current_workspace) == true
+		&& in_array($current_workspace, WORKSPACES) == false
+	) {
+		$count += 1;
+		echo sprintf("-%02d %s\n", $count, $date);
+	} else {
+		echo sprintf("+%02d %s\n", ($minutes-$count), $date);
+		take_screenshot(($minutes-$count));
+	}
+}//}}}
+
 if(true) // Main while
 {//{{{
 	declare(ticks = 1);
@@ -261,8 +282,6 @@ if(true) // Main while
 	$start = time();
 	$minutes=-1;
 	$count = 0;
-	if (!defined('WORKSPACES'))
-		define('WORKSPACES', [0,1,2,3,4,5,6,7,8,9]);
 	while (true) {
 		$now = time();
 		$result = (($now-$start)-(($now-$start)%60))/60;
@@ -270,15 +289,7 @@ if(true) // Main while
 			$minutes = $result;
 		if ($result != $minutes) {
 			$minutes = $result;
-			$date = date("Y.m.d-H:i");
-			$current_workspace = get_current_workspace();
-			if (!in_array($current_workspace, WORKSPACES)) {
-				$count += 1;
-				echo sprintf("-%02d %s\n", $count, $date);
-			} else {
-				echo sprintf("+%02d %s\n", ($minutes-$count), $date);
-				take_screenshot(($minutes-$count), $current_workspace);
-			}
+			echo_time($minutes, $count);
 			if ($minutes == ($stop+$count)) {
 				break;
 			}
