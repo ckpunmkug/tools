@@ -1,0 +1,19 @@
+#!/bin/sh -v
+
+# CONFIG DISPLAY
+
+export XAUTHORITY="/var/local/Xauthority"
+export DISPLAY=":1.0"
+
+# START BROWSER
+
+${HOME}/Browser/firefox.real \
+ --remote-debugging-port 9222 \
+ --remote-allow-hosts localhost \
+ --remote-allow-origins 'http://localhost:8080/' \
+ 2>&1 | /usr/bin/tee ${HOME}/Browser/start_output.txt
+
+# BEFORE EXIT
+
+/usr/bin/echo -n -e "\nfirefox.real exit status = ${?}\n"
+
