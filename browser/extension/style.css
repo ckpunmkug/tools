@@ -1,0 +1,54 @@
+.tal{ text-align:left } .tac{ text-align:center } .tar{ text-align:right }
+
+	/* global {{{*/
+*	
+	{
+	font-family: 'terminus';
+	font-size: 20px;
+	font-weight: normal;
+	background-color: #000000;
+	color: lightgrey;
+	}
+::selection
+	{
+	background-color: #408000;
+	color: #50D000;
+	}
+@font-face
+	{
+	font-family: "terminus";
+	src : url("/font.ttf");
+	}
+	/*}}} global */
+
+	/* form {{{*/
+fieldset
+	{
+		width: min-content;
+		border: solid 1px #888;
+	}
+input
+	{
+		padding: 5px;
+		width: 320px;
+		border: none;
+		border-bottom: solid 1px #888;
+		outline: none;
+	}
+button
+	{
+		margin: 5px;
+		padding: 5px;
+		border: solid 1px #888;
+	}
+button:focus
+	{
+		border: solid 1px #FFF;
+		outline: none;
+	}
+button:active
+	{
+		background: #FFF;
+	}
+	/*}}} form */
+	
