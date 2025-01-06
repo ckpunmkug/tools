@@ -10,13 +10,17 @@ class Main
 			case('GET'):
 				$return = $this->handle_get_request();
 				if($return !== true) {
+					http_response_code(500);
 					trigger_error("Handle get request failed", E_USER_ERROR);
+					exit(255);
 				}
 				exit(0);
 			case('POST'):
 				$return = $this->handle_post_request();
 				if($return !== true) {
+					http_response_code(500);
 					trigger_error("Handle post request failed", E_USER_ERROR);
+					exit(255);
 				}
 				exit(0);
 			default:
@@ -34,17 +38,37 @@ class Main
 	
 	function handle_post_request()
 	{//{{{
-		$action = @strval($_POST["action"]);
-		switch($action) {
-			case('test'):
-				$return = $this->test();
+		$json = file_get_contents('php://input');
+		if(!is_string($json)) {
+			trigger_error("Can't get contents from `php input`", E_USER_WARNING);
+			return(false);
+		}
+		
+		$array = json_decode($json, true);
+		if(!is_array($array)) {
+			trigger_error("Can't decode json into POST array", E_USER_WARNING);
+			return(false);
+		}
+		$_POST = $array; unset($array);
+		
+		$token = @strval($_POST["token"]);
+		if($token !== CSRF_TOKEN) {
+			trigger_error("Incorrect `csrf_token` passed", E_USER_WARNING);
+			return(false);
+		}
+	
+		$component = @strval($_POST["component"]);
+		switch($component) {
+			case('parser'):
+				require_once('component/Parser.php');
+				$return = Parser::action();
 				if($return !== true) {
-					trigger_error("Can't perform 'test' action", E_USER_WARNING);
+					trigger_error("Can't `parser` action failed", E_USER_WARNING);
 					return(false);					
 				}
 				return(true);
 			default:
-				trigger_error("Unsupported 'action'", E_USER_WARNING);
+				trigger_error("Unsupported `component`", E_USER_WARNING);
 				return(false);
 		}
 	}//}}}

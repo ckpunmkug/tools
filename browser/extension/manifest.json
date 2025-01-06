@@ -2,14 +2,14 @@
 	"manifest_version": 2
 	
 	,"version": "0.0"
-	,"name": "Extension template"
-	,"description": "Extension template with basic functionality"
+	,"name": "Set of tools"
+	,"description": "Parser"
 	,"icons": {
 		"48": "icons/icon-48.png"
 	}
 	
 	,"browser_action": {
-		"default_title": "Template"
+		"default_title": "Tools"
 		,"default_icon": {
 			"16": "icons/icon16.png"
 			,"32": "icons/icon32.png"
@@ -18,7 +18,7 @@
 	
 	,"commands": {
 		"parser": {
-			"description": "Call the parser controll menu"
+			"description": "Call the parser commandline"
 			,"suggested_key": {
 				"default": "Ctrl+Alt+1"
 			}
@@ -27,8 +27,9 @@
 	
 	,"background": {
 		"scripts": [
-			"parser.js"
-			,"background.js"
+			"script/HTTPLoader.js",
+			"script/parser.js",
+			"background.js"
 		]
 	}
 	
@@ -36,6 +37,7 @@
 		"*://*/*"
 		,"tabs"
 		,"scripting"
+		,"clipboardWrite"
 	]
 }
 

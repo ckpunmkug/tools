@@ -5,7 +5,7 @@ var parser = {
 	{//{{{//
 		
 		//console.log($parserAction);
-		var $return;
+		var $return, $parameters;
 		
 		switch($command) {
 			case('h'):
@@ -18,11 +18,39 @@ n next - get next query
 `;
 ///////////////////////////////////////////////////////////////}}}//
 				console.log($help);
-				return(true);
+				break;
+			case('n'):
+			case('next'):
+				$parameters = {
+					"component": "parser"
+					,"action": "next"
+				};
+				$return = await backendRequest($parameters);
+				if(typeof($return) != "string") {
+					this.error("Can't perform backend request");
+					return(false);
+				}
+				await navigator.clipboard.writeText($return);
+				break;
 		}
-		
 		return(null);
 		
+	}//}}}//
+	
+	,error: async function($message)
+	{//{{{//
+		console.error($message);
+		
+		var $return, $parameters;
+		$parameters = {
+			active: true
+		};
+		var $tab = await browser.tabs.query($parameters);
+		$tab = $tab[0];
+		$parameters = {
+		 	code: 'alert("'+$message+'");'
+		};
+		$return = await browser.tabs.executeScript($tab.id, $parameters);
 	}//}}}//
 	
 	,browserOnCommand: async function()
@@ -52,15 +80,13 @@ n next - get next query
 		};
 		$return = await browser.tabs.executeScript($tab.id, $parameters);
 		
-		if($return[0] == 'undefined') {
-			$parameters = {
-				file: "/parser.js"
-			};
-			await browser.tabs.executeScript($tab.id, $parameters);
-		}
+		$parameters = {
+			file: "/script/parser.js"
+		};
+		await browser.tabs.executeScript($tab.id, $parameters);
 		
 		$parameters = {
-			code: 'var $return = parser.commandLine(); $return;'
+		 	code: 'var $return = prompt("Enter `parser` command"); $return;'
 		};
 		$return = await browser.tabs.executeScript($tab.id, $parameters);
 		//console.log($return[0]);
@@ -69,68 +95,5 @@ n next - get next query
 		
 	}//}}}//
 	
-	,commandLine: function()
-	{//{{{//
-
-		$result = new Promise(function(resolve) {
-			var $return;
-			
-			$return = document.querySelector("div[name='ckpunmkug.commandLine.container']");
-			if($return !== null) {
-				return(null);
-			}
-			
-			var $container = document.createElement("div");
-			$container.setAttribute('name', 'ckpunmkug.commandLine.container');
-			
-			var $style = {
-				'all': 'unset'
-				,'display': 'block'
-				,'position': 'absolute'
-				,'top': '0px'
-				,'left': '0px'
-				,'width': 'calc(100% - 12px)'
-				,'margin': '4px'
-				,'border': 'solid 2px black'
-			};
-			for(var [$key, $value] of Object.entries($style)) {
-				$container.style.setProperty($key, $value);
-			}
-			
-			$container.innerHTML = ''
-///////////////////////////////////////////////////////////////{{{//
-+`
-<input name="commandline" value="" type="text" style="
-	all: unset;
-	width: calc(100% - 12px);
-	font-family: Monospace;
-	font-size: 16px;
-	line-height: 24px;
-	padding: 4px;
-	background: black;
-	color: white;
-	border: solid 2px white;
-	" />
-`;
-///////////////////////////////////////////////////////////////}}}//
-			$container = document.body.appendChild($container);
-			
-			$input = $container.querySelector("input");
-			$input.focus();
-			
-			var inputOnChange = function($input, $container, resolve) {
-				var $result = $input.value;
-				var $parent = $container.parentNode;
-				$parent.removeChild($container);
-				resolve($result);
-			};
-			
-			$input.addEventListener("change", inputOnChange.bind(null, $input, $container, resolve));
-		});
-
-		return($result);
-	
-	}//}}}//
-	
-};
+}; 
 
