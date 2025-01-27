@@ -1,3 +1,6 @@
+const VERBOSE = true;
+const DEBUG = true;
+
 async function backendRequest($parameters)
 {//{{{//
 	var $backend = localStorage.getItem("backend");

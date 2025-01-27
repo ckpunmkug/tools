@@ -1,20 +1,22 @@
 <?php 
 
 class Initialization
-{//{{{//
+{
 
-	function __construct()
+	function __construct(bool $enable_config = false)
 	{//{{{//
-	
-		if(PHP_SAPI == 'cli-server') {
-			file_put_contents('php://stderr', "\n");
+		
+		if(PHP_SAPI == 'cli') {
+			if($enable_config) $this->config();
 		}
-		
-		$this->security();
-		
-		$this->define();
-		
-		$this->ini_set();
+		else {
+			if(PHP_SAPI == 'cli-server') {
+				file_put_contents('php://stderr', "\n");
+			}
+			$this->security();
+			$this->define();
+			$this->ini_set();
+		}
 		
 	}//}}}//
 	
@@ -67,5 +69,22 @@ class Initialization
 		
 	}//}}}//
 
-}//}}}//
+	function config()
+	{//{{{//
+		if(@is_string($_SERVER["DOCUMENT_ROOT"]) != true) {
+			if (defined('DEBUG') && DEBUG) @var_dump(['$_SERVER["DOCUMENT_ROOT"]' => $_SERVER["DOCUMENT_ROOT"]]);
+			trigger_error('Incorrect string `$_SERVER["DOCUMENT_ROOT"]`', E_USER_ERROR);
+			exit(255);
+		}
+		
+		require_once($_SERVER["DOCUMENT_ROOT"].'/config.php');
+		
+		if(defined('CONFIG') != true) {
+			trigger_error("`CONFIG` constant not defined in config file", E_USER_ERROR);
+			exit(255);
+		}
+		
+	}//}}}//
+
+}
 

@@ -56,7 +56,9 @@ n next - get next query
 	,browserOnCommand: async function()
 	{//{{{//
 		
-		//console.log("parser.browserOnCommand");
+		if(typeof(VERBOSE) == 'boolean' && VERBOSE === true) {
+			console.log("parser.browserOnCommand");
+		}
 		var $return;
 		
 		$return = await this.getCommand();
@@ -74,24 +76,20 @@ n next - get next query
 		};
 		var $tab = await browser.tabs.query($parameters);
 		$tab = $tab[0];
+		if(typeof(DEBUG) == 'boolean' && DEBUG === true) {
+			console.debug('active tab', $tab);
+		}
 		
 		$parameters = {
-			code: 'var $return = typeof(parser); $return;'
+		 	code: '$return = prompt("Enter parser command"); $return;'
 		};
 		$return = await browser.tabs.executeScript($tab.id, $parameters);
+		var $command = $return[0];
+		if(typeof(DEBUG) == 'boolean' && DEBUG === true) {
+			console.debug('parser command', $command);
+		}
 		
-		$parameters = {
-			file: "/script/parser.js"
-		};
-		await browser.tabs.executeScript($tab.id, $parameters);
-		
-		$parameters = {
-		 	code: 'var $return = prompt("Enter `parser` command"); $return;'
-		};
-		$return = await browser.tabs.executeScript($tab.id, $parameters);
-		//console.log($return[0]);
-		
-		return($return[0]);
+		return($command);
 		
 	}//}}}//
 	

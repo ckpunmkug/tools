@@ -2,14 +2,15 @@
 	"manifest_version": 2
 	
 	,"version": "0.0"
-	,"name": "Set of tools"
-	,"description": "Parser"
+	,"name": "Research toolkit"
+	,"description": "The toolkit contains: duckduckgo parser"
 	,"icons": {
 		"48": "icons/icon-48.png"
 	}
 	
 	,"browser_action": {
-		"default_title": "Tools"
+		"default_title": "Research toolkit"
+		,"default_area": "navbar"
 		,"default_icon": {
 			"16": "icons/icon16.png"
 			,"32": "icons/icon32.png"

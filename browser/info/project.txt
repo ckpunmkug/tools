@@ -1,0 +1,24 @@
+error - Module for extended error reporting.
+{//{{{//
+	error.js
+}//}}}//
+
+
+connector - Module for connecting between the extension and the server backend.
+
+Parser
+{
+
+	tables
+	{//{{{//
+		
+		queries
+			id
+			parent_id
+			query
+			body_innerHTML
+		
+	}//}}}//
+	
+}	
+

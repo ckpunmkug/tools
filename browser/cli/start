@@ -1,0 +1,41 @@
+#!/usr/bin/php
+<?php
+
+set_include_path(__DIR__.'/../include');
+
+require_once('class/Args.php');
+if(true) // Args
+{//{{{//
+
+	Args::$description = "KOM6A~ZH B KOHCOJLE";
+	Args::add([
+		"-c", "--config", "STRING", "Path to config file",
+		function ($string) {
+			$realpath = realpath($string);
+			if(!is_string($realpath)) {
+				trigger_error("Can't get `real path` for `config file`", E_USER_WARNING);
+				return(false);
+			}
+			$_SERVER["DOCUMENT_ROOT"] = dirname($realpath);
+		}, true
+	]);
+	Args::apply();
+
+}//}}}//
+
+require_once('class/Initialization.php');
+$Initialization = new Initialization(true);
+
+function main()
+{
+	var_dump(CONFIG["parser_duckduckgo"]);
+	return(true);
+}
+
+$return = main();
+if($return !== true) {
+	trigger_error("Call `main` return error", E_USER_ERROR);
+	exit(255);
+}
+exit(0);
+
