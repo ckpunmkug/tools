@@ -1,12 +1,36 @@
 #!/bin/sh
 
+unalias -a
+
 FILE=`/usr/bin/realpath $0`
 DIR=`/usr/bin/dirname ${FILE}`
 BASENAME=`/usr/bin/basename ${FILE}`
 
-/usr/bin/killall -SIGTERM wget
+HELP="
+Description: Download 128kbs mp3 stream of 'silver rain' radio.
+Usage: ${BASENAME} <path_to_folder_for_save_mp3_file>
+"
+if test "${1}" = "-h" -o "${1}" = "--help"
+then
+	echo "${HELP}"
+	exit 0
+fi
+
+error ()
+{
+	/usr/bin/echo "Error: ${BASENAME} - ${1}" >&2
+	return 255
+}
+
+if test -z "${1}"
+then
+	error "Path to folder for mp3 file is not passed"
+	exit 255
+fi
+
+#/usr/bin/killall -SIGTERM wget
 
 export TZ='Europe/Moscow'
-DATE=`/usr/bin/date "+%u-%H-%d.%m.%g"`
-/usr/bin/wget -O "${DIR}/mp3/${DATE}.mp3" https://silverrain.hostingradio.ru/silver128.mp3
+DATE=`/usr/bin/date "+%g.%m.%d-%H:%M"`
+/usr/bin/wget -O "${1}/${DATE}.mp3" https://silverrain.hostingradio.ru/silver128.mp3
 
