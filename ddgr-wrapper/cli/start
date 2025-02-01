@@ -1,0 +1,141 @@
+#!/usr/bin/php
+<?php
+
+if(true) // initialization
+{//{{{//
+
+	define('VERBOSE', true);
+
+	set_include_path(__DIR__.'/../include');
+	define('DATA_FOLDER_PATH', '/srv/www-data/data');
+	define('DATABASE_FILE_NAME', 'true-meds.net.sqlite');
+	
+	require_once('class/Data.php');
+	$database_file_path = DATA_FOLDER_PATH.'/'.DATABASE_FILE_NAME;
+	Data::open($database_file_path);
+	
+	require_once('component/ddgr.php');
+	
+}//}}}//
+
+function main()
+{
+
+	if(!true) // regions - create and fill table
+	{//{{{//
+		
+		$input_file_path = DATA_FOLDER_PATH.'/regions.txt';
+		$contents = file_get_contents($input_file_path);
+		if(!is_string($contents)) {
+			trigger_error("Can't get contents from fike with `region`", E_USER_WARNING);
+			return(false);
+		}
+		
+		$array = explode("\n", $contents); unset($contents);
+		$REGION = [];
+		foreach($array as $string){
+			$string = trim($string);
+			if(empty($string)) continue;
+			array_push($REGION, $string);
+		}
+		unset($array, $string);
+		
+		$query = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+DROP TABLE IF EXISTS 'REGION';
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$return = Data::exec($query);
+		if(!$return) {
+			trigger_error("Can't drop table `REGION`", E_USER_WARNING);
+			return(false);
+		}
+		
+		$query = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+CREATE TABLE 'REGION' (
+	'id' INTEGER PRIMARY KEY
+	,'region' TEXT
+);
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$return = Data::exec($query);
+		if(!$return) {
+			trigger_error("Can't create `REGION` table", E_USER_WARNING);
+			return(false);
+		}
+		
+		foreach($REGION as $region) {
+			$_["region"] = Data::escape($region);
+			$query = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+INSERT INTO 'REGION' (
+	'region'
+) VALUES (
+	'{$_["region"]}'
+);
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+			$return = Data::exec($query);
+			if(!$return) {
+				trigger_error("Can't insert `region` into `REGION`", E_USER_WARNING);
+				return(false);
+			}
+		}
+		
+	}//}}}//
+	
+	$REGION = ddgr::get_REGION();
+	// var_dump($REGION);
+	
+	if(true) // create and fill test queries table
+	{//{{{//
+	
+		$table = '/queries/test';
+		$input_file = DATA_FOLDER_PATH.'/products.txt';
+		
+		$return = ddgr::create_queries_table($table);
+		if(!$return) {
+			trigger_error("Can't create `test queries` table", E_USER_WARNING);
+			return(false);
+		}
+		
+		$contents = file_get_contents($input_file);
+		if(!is_string($contents)) {
+			trigger_error("Can't get contents from input file", E_USER_WARNING);
+			return(false);
+		}
+		$QUERY = explode("\n", $contents);
+		
+		for($i = 0; $i < 1; $i += 1) {
+			$query = trim($QUERY[$i]);
+			if(empty($query)) continue;
+			
+			for($j = 0; $j < 30; $j += 1) {
+				$region = $REGION[$j]["id"];
+				ddgr::insert_query($table, $query, $region);
+			}
+		}
+
+	}//}}}//
+	
+	if(true) // test ddgr::process
+	{//{{{//
+		
+		ddgr::$REGION = $REGION;
+		$table = '/queries/test';
+		ddgr::process($table);
+		
+	}//}}}//
+	
+	return(true);
+
+}
+
+$return = main();
+if($return !== true) exit(255);
+exit(0);
+
