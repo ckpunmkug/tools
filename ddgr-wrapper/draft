@@ -1,0 +1,40 @@
+			
+			// get count of queries where status zero
+			
+			if(defined('VERBOSE') && VERBOSE) {
+				$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+SELECT COUNT(*) FROM '{$_["name"]}' WHERE status=0;
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+				$array = Data::query($sql);
+				if(!is_array($array)) {
+					trigger_error("Can't get count of queries where status zero", E_USER_WARNING);
+					return(false);
+				}
+				$left = @intval($array[0]["COUNT(*)"]);
+				
+				echo("Left: {$left}  Query: {$query["query"]}  Region: {$region}\n");
+			}
+			
+			// update query status to 1
+			
+			
+			$json = self::exec($query["query"], $region);
+			//var_dump($json);
+			/*
+			return(true);
+			if(is_string($json)) {
+				self::update_status($query["id"], 2);
+				self::update_result($query["id"], $json);
+			}
+			else {
+				self::update_status($query["id"], 3);				
+			}
+			*/
+			
+			sleep(4);
+			
+		} // while(true)
+

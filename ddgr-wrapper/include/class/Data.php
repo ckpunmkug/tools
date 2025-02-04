@@ -170,6 +170,7 @@ class Data
 			self::$SQLite3 = new SQLite3($filename, $flags);
 		}
 		catch(Exception $Exception) {
+			if (defined('DEBUG') && DEBUG) var_dump(['path to database file' => $filename]);
 			trigger_error($Exception->getMessage(), E_USER_WARNING);
 			return(false);
 		}

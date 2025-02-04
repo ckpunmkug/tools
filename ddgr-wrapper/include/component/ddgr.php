@@ -2,63 +2,81 @@
 
 class ddgr
 {
-	static $ddgr_bin = '/usr/bin/ddgr';
-	static $REGION = [];
-	static $timeout = 1;
+	static $regions_table = '/ddgr/regions';
+	static $queries_table_prefix = '/ddgr/queries/';
 	
-	static function get_REGION()
+	static $ddgr_bin = '/usr/bin/ddgr';
+	static $timeout = 10;
+	
+	static function import_regions(string $regions_file_path)
 	{//{{{//
 		
-		$sql = 
-///////////////////////////////////////////////////////////////{{{//
-<<<HEREDOC
-SELECT * FROM 'REGION';
-HEREDOC;
-///////////////////////////////////////////////////////////////}}}//
-		$REGION = Data::query($sql);
-		if(!is_array($REGION)){
-			trigger_error("Can't get `REGION` array", E_USER_WARNING);
+		$contents = file_get_contents($regions_file_path);
+		if(!is_string($contents)) {
+			if (defined('DEBUG') && DEBUG) var_dump(['path to regions file' => $regions_file_path]);
+			trigger_error("Can't get contents from regions file", E_USER_WARNING);
 			return(false);
 		}
 		
-		return($REGION);
+		$return = self::create_regions_table();
+		if(!$return) {
+			trigger_error("Can't create regions table", E_USER_WARNING);
+			return(false);
+		}
+		
+		$array = explode("\n", $contents);
+		$count = 0;
+		foreach($array as $string) {
+			$string = trim($string);
+			if(empty($string)) continue;
+			
+			$return = self::insert_country_language_abbreviation($string);
+			if(!$return) {
+				trigger_error("Can't insert country language abbreviation into regions table", E_USER_WARNING);
+				return(false);
+			}
+			
+			$count += 1;
+		}// foreach($array as $string)
+		
+		if(defined('VERBOSE') && VERBOSE) {
+			echo("Added to regions table {$count} country language abbreviations\n");
+		}
+		
+		return(true);
 		
 	}//}}}//
 	
-	static function create_queries_table(string $name)
+	static function create_regions_table()
 	{//{{{//
 		
-		$_["name"] = Data::name($name);
-		
+		$_ = [
+			"table" => Data::name(self::$regions_table),
+		];
 		$sql = 
 ///////////////////////////////////////////////////////////////{{{//
 <<<HEREDOC
-DROP TABLE IF EXISTS '{$_["name"]}';
+DROP TABLE IF EXISTS '{$_["table"]}';
 HEREDOC;
 ///////////////////////////////////////////////////////////////}}}//
 		$return = Data::exec($sql);
 		if(!$return) {
-			if (defined('DEBUG') && DEBUG) var_dump(['$_["name"]' => $_["name"]]);
-			trigger_error("Can't drop `queries` table", E_USER_WARNING);
+			trigger_error("Exec drop table query failed", E_USER_WARNING);
 			return(false);
 		}
 		
 		$sql = 
 ///////////////////////////////////////////////////////////////{{{//
 <<<HEREDOC
-CREATE TABLE '{$_["name"]}' (
-	'id' INTEGER PRIMARY KEY
-	,'query' TEXT
-	,'region' INTEGER
-	,'status' INTEGER DEFAULT 0
-	,'result' TEXT DEFAULT ''
+CREATE TABLE '{$_["table"]}' (
+	id INTEGER PRIMARY KEY
+	,country_language_abbreviation TEXT
 );
 HEREDOC;
 ///////////////////////////////////////////////////////////////}}}//
 		$return = Data::exec($sql);
 		if(!$return) {
-			if (defined('DEBUG') && DEBUG) var_dump(['$_["name"]' => $_["name"]]);
-			trigger_error("Can't create `queries` table", E_USER_WARNING);
+			trigger_error("Exec create table query failed", E_USER_WARNING);
 			return(false);
 		}
 		
@@ -66,59 +84,176 @@ HEREDOC;
 		
 	}//}}}//
 	
-	static function insert_query(string $table, string $query, int $region)
+	static function insert_country_language_abbreviation(string $country_language_abbreviation)
 	{//{{{//
 		
 		$_ = [
-			"table" => Data::name($table),
-			"query" => Data::escape($query),
-			"region" => Data::integer($region),
+			"table" => Data::name(self::$regions_table),
+			"country_language_abbreviation" => Data::escape($country_language_abbreviation),
+		];
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+INSERT INTO '{$_["table"]}' (
+	country_language_abbreviation
+) VALUES (
+	'{$_["country_language_abbreviation"]}'
+);
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$return = Data::exec($sql); 
+		if(!$return) {
+			trigger_error("Exec insert query failed", E_USER_WARNING);
+			return(false);
+		}
+		
+		return(true);
+		
+	}//}}}//
+	
+	
+	/// methods for import queries
+	
+	static function import_queries(string $queries_file_path, string $queries_table_name)
+	{//{{{//
+		
+		$contents = file_get_contents($queries_file_path);
+		if(!is_string($contents)) {
+			if (defined('DEBUG') && DEBUG) var_dump(['queries file path' => $queries_file_path]);
+			trigger_error("Can't get contents from queries list file", E_USER_WARNING);
+			return(false);
+		}
+		
+		$array = explode("\n", $contents);
+		$KEYWORDS = [];
+		foreach($array as $string) {
+			$string = trim($string);
+			if(empty($string)) continue;
+			array_push($KEYWORDS, $string);
+		}
+		
+		$return = self::create_queries_table($queries_table_name);
+		if(!$return) {
+			trigger_error("Can't create queries table", E_USER_WARNING);
+			return(false);
+		}
+		
+		$regions = ddgr::get_regions();
+		if(!is_array($regions)) {
+			trigger_error("Can't get regions", E_USER_WARNING);
+			return(false);
+		}
+		
+		$count = 0;
+		foreach($KEYWORDS as $keywords) {
+			foreach($regions as $region) {
+				$return = ddgr::insert_query($queries_table_name, $keywords, $region);
+				if(!$return) {
+					trigger_error("Can't insert query", E_USER_WARNING);
+					return(false);
+				}
+				$count += 1;
+			}
+		}
+		
+		if(defined('VERBOSE') && VERBOSE) {
+			echo("Added queries into database: {$count}\n");
+		}
+		
+		return(true);
+		
+	}//}}}//
+	
+	static function create_queries_table(string $queries_table_name)
+	{//{{{//
+		
+		$_ = [
+			"table" => Data::name(self::$queries_table_prefix.$queries_table_name),
 		];
 		
 		$sql = 
 ///////////////////////////////////////////////////////////////{{{//
 <<<HEREDOC
-SELECT * FROM '{$_["table"]}'
- WHERE query='{$_["query"]}' AND region={$_["region"]};
+DROP TABLE IF EXISTS '{$_["table"]}';
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$return = Data::exec($sql);
+		if(!$return) {
+			trigger_error("Exec drop table query failed", E_USER_WARNING);
+			return(false);
+		}
+		
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+CREATE TABLE '{$_["table"]}' (
+	id INTEGER PRIMARY KEY
+	,status INTEGER DEFAULT 0
+	,keywords TEXT
+	,region TEXT
+	,json TEXT DEFAULT ''
+);
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$return = Data::exec($sql);
+		if(!$return) {
+			trigger_error("Exec create table query failed", E_USER_WARNING);
+			return(false);
+		}
+		
+		return(true);
+		
+	}//}}}//
+	
+	static function get_regions()
+	{//{{{//
+		
+		$_ = [
+			"table" => Data::name(self::$regions_table),
+		];
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+SELECT * FROM '{$_["table"]}';
 HEREDOC;
 ///////////////////////////////////////////////////////////////}}}//
 		$array = Data::query($sql);
 		if(!is_array($array)) {
-			if (defined('DEBUG') && DEBUG) var_dump([
-				'$_["table"]' => $_["table"],
-				'$_["query"]' => $_["query"],
-			]);
-			trigger_error("Can't select `query` from `queries` table", E_USER_WARNING);
+			trigger_error("Exec select from table query failed", E_USER_WARNING);
 			return(false);
 		}
 		
-		$count = count($array);
-		if($count > 0) {
-			if (defined('DEBUG') && DEBUG) var_dump([
-				'$_["table"]' => $_["table"],
-				'$_["query"]' => $_["query"],
-			]);
-			trigger_error("`query` already exists in `queries` table", E_USER_WARNING);
-			return(false);
+		$regions = [];
+		foreach($array as $item) {
+			$regions[$item["id"]] = $item["country_language_abbreviation"];
 		}
+		
+		return($regions);
+		
+	}//}}}//
+	
+	static function insert_query(string $queries_table_name, string $keywords, string $region)
+	{//{{{//
+	
+		$_ = [
+			"table" => Data::name(self::$queries_table_prefix.$queries_table_name),
+			"keywords" => Data::escape($keywords),
+			"region" => Data::escape($region),
+		];
 		
 		$sql = 
 ///////////////////////////////////////////////////////////////{{{//
 <<<HEREDOC
 INSERT INTO '{$_["table"]}' (
-	'query', 'region'
+	keywords, region
 ) VALUES (
-	'{$_["query"]}', {$_["region"]}
+	'{$_["keywords"]}', '{$_["region"]}'
 );
 HEREDOC;
 ///////////////////////////////////////////////////////////////}}}//
 		$return = Data::exec($sql);
 		if(!$return) {
-			if (defined('DEBUG') && DEBUG) var_dump([
-				'$_["table"]' => $_["table"],
-				'$_["query"]' => $_["query"],
-			]);
-			trigger_error("Can't insert `query` in to `queries` table", E_USER_WARNING);
+			trigger_error("Exec insert into query failed", E_USER_WARNING);
 			return(false);
 		}
 		
@@ -126,95 +261,123 @@ HEREDOC;
 		
 	}//}}}//
 	
-	static function process(string $table)
+	
+	/// methods for process
+	
+	static function process(string $queries_table_name)
 	{//{{{//
 		
-		$_ = [
-			"name" => Data::name($table),
-		];
+		$statistics = ddgr::statistics($queries_table_name);
+		if(!is_array($statistics)) {
+			trigger_error("Can't get statistics", E_USER_WARNING);
+			return(false);
+		}
+		$total = $statistics['total'];
+		$left = $statistics['raw'];
+	
 		while(true) {
 			
-			// get query with status 0
-			
-			$sql = 
-///////////////////////////////////////////////////////////////{{{//
-<<<HEREDOC
-SELECT * FROM '{$_["name"]}' WHERE status=0 LIMIT 1;
-HEREDOC;
-///////////////////////////////////////////////////////////////}}}//
-			$array = Data::query($sql);
-			if(!is_array($array)) {
-				trigger_error("Can't select query with status 0", E_USER_WARNING);
-				return(false);
+			if(defined('VERBOSE') && VERBOSE) {
+				echo("\nTotal: {$total}  Left: {$left}");
 			}
-			if(empty($array)) {
-				if(defined('VERBOSE') && VERBOSE) {
-					user_error("No queries with status 0");
+			
+			$query = self::get_next_query($queries_table_name);
+			if(!is_array($query)) {
+				if(!$query) {
+					trigger_error("Can't get next query", E_USER_WARNING);
+					return(false);
 				}
 				return(true);
 			}
-			$query = $array[0];
-			foreach(self::$REGION as $region) {
-				if($region["id"] == $query["region"]) {
-					$region = $region["region"];
-					break;
-				}
-			}
 			
-			// get count of queries where status zero
-			
-			if(defined('VERBOSE') && VERBOSE) {
-				$sql = 
-///////////////////////////////////////////////////////////////{{{//
-<<<HEREDOC
-SELECT COUNT(*) FROM '{$_["name"]}' WHERE status=0;
-HEREDOC;
-///////////////////////////////////////////////////////////////}}}//
-				$array = Data::query($sql);
-				if(!is_array($array)) {
-					trigger_error("Can't get count of queries where status zero", E_USER_WARNING);
-					return(false);
-				}
-				$left = @intval($array[0]["COUNT(*)"]);
-				
-				echo("Left: {$left}  Query: {$query["query"]}  Region: {$region}\n");
-			}
-			
-			// update query status to 1
-			
-			$sql = 
-///////////////////////////////////////////////////////////////{{{//
-<<<HEREDOC
-UPDATE '{$_["name"]}' SET status=1 WHERE id={$query["id"]};
-HEREDOC;
-///////////////////////////////////////////////////////////////}}}//
-			$return = Data::exec($sql);
+			$return = self::update_query($queries_table_name, $query["id"], 1);
 			if(!$return) {
 				trigger_error("Can't update query status to 1", E_USER_WARNING);
 				return(false);
 			}
 			
-			$json = self::exec($query["query"], $region);
-			//var_dump($json);
-			/*
+			$left -= 1;
+			
+			$json = ddgr::exec($query["keywords"], $query["region"]);
+			if(!is_string($json)) {
+				$return = self::update_query($queries_table_name, $query["id"], 2);
+				if(!$return) {
+					trigger_error("Can't update query status to 2", E_USER_WARNING);
+				}
+				trigger_error("Can't exec ddgr", E_USER_WARNING);
+				return(false);
+			}
+			
+			$return = self::update_query($queries_table_name, $query["id"], 3, $json);
+			if(!$return) {
+				trigger_error("Can't update query json", E_USER_WARNING);
+				return(false);
+			}
+			
+			sleep(self::$timeout);
+		}// while(true)
+	}//}}}//
+	
+	static function get_next_query(string $queries_table_name)
+	{//{{{//
+		
+		$_ = [
+			"table" => Data::name(self::$queries_table_prefix.$queries_table_name),
+		];
+		
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+SELECT * FROM '{$_["table"]}' WHERE status=0 LIMIT 1;
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$array = Data::query($sql);
+		if(!is_array($array)) {
+			trigger_error("Can't select query with status 0", E_USER_WARNING);
+			return(false);
+		}
+		
+		if(empty($array)) {
 			return(true);
-			if(is_string($json)) {
-				self::update_status($query["id"], 2);
-				self::update_result($query["id"], $json);
-			}
-			else {
-				self::update_status($query["id"], 3);				
-			}
-			*/
-			
-			sleep(4);
-			
-		} // while(true)
+		}
+		
+		$query = $array[0];
+
+		return($query);
+		
+	}//}}}//
+	
+	static function update_query(string $queries_table_name, int $id, int $status, string $json = '')
+	{//{{{//
+		
+		$_ = [
+			"table" => Data::name(self::$queries_table_prefix.$queries_table_name),
+			"id" => Data::integer($id),
+			"status" => Data::integer($status),
+			"json" => Data::escape($json),
+		];		
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+UPDATE '{$_["table"]}'
+ SET status={$_["status"]}, json='{$_["json"]}'
+ WHERE id={$_["id"]};
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$return = Data::exec($sql);
+		if(!$return) {
+			trigger_error("Exec update query failed", E_USER_WARNING);
+			return(false);
+		}
+		
+		return(true);
 		
 	}//}}}//
 	
 	static function exec(string $keywords, string $region, int $number = 24)
 	{//{{{//
+		if(defined('VERBOSE') && VERBOSE) {
+			echo("\nkeywords: '{$keywords}'; region: '{$region}';\n"); }
 		
 		$man = 
 ///////////////////////////////////////////////////////////////{{{//
@@ -272,6 +435,44 @@ HEREDOC;
 		}
 		
 		$result = implode("\n", $output);
+		return($result);
+		
+	}//}}}//
+	
+	
+	// get statistics
+	
+	static function statistics(string $queries_table_name)
+	{//{{{//
+		
+		$_ = [
+			"table" => Data::name(self::$queries_table_prefix.$queries_table_name),
+		];
+		
+		$result = [];
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+SELECT COUNT(*) FROM '{$_["table"]}'
+ UNION ALL SELECT COUNT(*) FROM '{$_["table"]}' WHERE status=0
+ UNION ALL SELECT COUNT(*) FROM '{$_["table"]}' WHERE status=1
+ UNION ALL SELECT COUNT(*) FROM '{$_["table"]}' WHERE status=2
+ UNION ALL SELECT COUNT(*) FROM '{$_["table"]}' WHERE status=3
+;
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$array = Data::query($sql);
+		if(!is_array($array)) {
+			trigger_error("Exec select with union query failed", E_USER_WARNING);
+			return(false);
+		}
+		
+		$result["total"] = $array[0]["COUNT(*)"];
+		$result["raw"] = $array[1]["COUNT(*)"];
+		$result["try"] = $array[2]["COUNT(*)"];
+		$result["error"] = $array[3]["COUNT(*)"];
+		$result["complete"] = $array[4]["COUNT(*)"];
+		
 		return($result);
 		
 	}//}}}//
