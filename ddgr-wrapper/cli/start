@@ -11,7 +11,7 @@ if(true) // Initialization
 	
 }//}}}//
 
-if(true) // Args
+if(true) // Args used chars D, R, Q, T, P, S, F, E
 {//{{{//
 	
 	Args::$description = "Program description";
@@ -49,6 +49,18 @@ if(true) // Args
 		"-S", "--ddgr-statistics", NULL, "Count and show ddgr data",
 		function () {
 			define("DDGR_STATISTICS", true);
+		}, false
+	]);
+	Args::add([
+		"-F", "--create-results", NULL, "Parse ddgr json in to results table",
+		function () {
+			define("CREATE_RESULTS", true);
+		}, false
+	]);
+	Args::add([
+		"-E", "--export-urls", "<path_to_file>", "Export urls from results table to file",
+		function ($string) {
+			define("EXPORT_URLS_FILE_PATH", $string);
 		}, false
 	]);
 	Args::apply();
@@ -125,6 +137,27 @@ HEREDOC;
 		echo($text);
 	}
 	
+	if(defined('CREATE_RESULTS')) {
+		if(!defined('QUERIES_TABLE_NAME')) {
+			trigger_error("Queries table name not passed in command line", E_USER_WARNING);
+			return(false);
+		}
+		
+		$return = ddgr::create_results(QUERIES_TABLE_NAME);
+		if(!$return) {
+			trigger_error("Can't create results data", E_USER_WARNING);
+			return(false);
+		}
+	}
+	
+	if(defined('EXPORT_URLS_FILE_PATH')) {
+		$return = ddgr::export_urls(EXPORT_URLS_FILE_PATH);
+		if(!$return) {
+			trigger_error("Can't export urls to file", E_USER_WARNING);
+			return(false);
+		}
+	}
+		
 	return(true);
 }
 

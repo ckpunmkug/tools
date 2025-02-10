@@ -1,0 +1,108 @@
+#!/usr/bin/php
+<?php
+
+if(true) // Initialization
+{//{{{//
+
+	set_include_path(__DIR__.'/../include');
+	require_once('class/Data.php');
+	require_once('class/Args.php');
+	require_once('function/functions.php');
+	require_once('component/map.php');
+	
+}//}}}//
+
+if(true) // Args used chars D, F
+{//{{{//
+	
+	Args::$description = "Scenario";
+	Args::add([
+		"-D", "--database", "<path_to_file>", "Path to database file",
+		function ($string) {
+			define("DATABASE_FILE_PATH", $string);
+		}, true
+	]);
+	Args::add([
+		"-I", "--input-file", "<path_to_file>", "Path to input file",
+		function ($string) {
+			define("INPUT_FILE_PATH", $string);
+		}, false
+	]);
+	Args::apply();
+	
+}//}}}//
+
+function main()
+{
+
+	if(true) // open database
+	{//{{{//
+	
+		$return = Data::open(DATABASE_FILE_PATH);
+		if(!$return) {
+			trigger_error("Can't open database", E_USER_WARNING);
+			return(false);
+		}
+		
+	}//}}}//
+	
+	if(true) // import, parse nslookup, save geo
+{///////////////////////////////////////////////////////////////{{{//
+
+$return = map::S00_create_table();
+if(!$return) {
+	trigger_error("", E_USER_WARNING);
+	return(false);
+}
+
+$offset = 0;
+$counter = 0;
+while(true) {//
+
+	echo("\r{$counter}");
+	$counter += 1;
+	
+	$return = map::S00_get_nslookup_output($offset);
+	if(!is_array($return)) {
+		if($return === NULL) break;
+		trigger_error("", E_USER_WARNING);
+		return(false);
+	}
+	$offset += 1;
+	$data = $return;
+	
+	//var_dump($offset, $data); if($counter == 2) break; continue;
+	
+	$string = $data[0];
+	$string = trim($string);
+	$expression = '/^Name\:\s+(.+)$/';
+	$return = preg_match($expression, $string, $MATCH);
+	if($return !== 1) continue;
+	$domain = $MATCH[1];
+	
+	$string = $data[1];
+	$string = trim($string);
+	$expression = '/^Address\:\s+(.+)$/';
+	$return = preg_match($expression, $string, $MATCH);
+	if($return !== 1) continue;
+	$ip = $MATCH[1];
+	
+	//var_dump($domain, $ip); if($counter == 2) break;
+	
+	$return = map::S00_put_data($domain, $ip);
+	if(!$return) {
+		trigger_error("", E_USER_WARNING);
+		return(false);
+	}
+	
+}// while(true)
+
+}///////////////////////////////////////////////////////////////}}}//
+	
+	return(true);
+}
+
+$return = main();
+if($return !== true) exit(255);
+exit(0);
+

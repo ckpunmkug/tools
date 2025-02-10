@@ -3,7 +3,9 @@
 class ddgr
 {
 	static $regions_table = '/ddgr/regions';
+	static $results_table = 'results';
 	static $queries_table_prefix = '/ddgr/queries/';
+	static $results_table_prefix = '/ddgr/results/';
 	
 	static $ddgr_bin = '/usr/bin/ddgr';
 	static $timeout = 10;
@@ -474,6 +476,305 @@ HEREDOC;
 		$result["complete"] = $array[4]["COUNT(*)"];
 		
 		return($result);
+		
+	}//}}}//
+	
+	
+	// create results
+	
+	static function create_results(string $queries_table_name)
+	{//{{{//
+		
+		$QUERY_ID = self::get_QUERY_ID_with_status($queries_table_name, 3);
+		if(!is_array($QUERY_ID)) {
+			trigger_error("Can't get queries ids", E_USER_WARNING);
+			return(false);
+		}
+		
+		$return = self::create_results_table($queries_table_name);
+		if(!$return) {
+			trigger_error("Can't create results table", E_USER_WARNING);
+			return(false);
+		}
+		
+		foreach($QUERY_ID as $query_id) {
+			$query = self::get_query_by_id($queries_table_name, $query_id);
+			if(!is_array($query)) {
+				trigger_error("Can't get query by id", E_USER_WARNING);
+				return(false);
+			}
+			
+			$RESULT = Data::decode($query["json"]);
+			if(!is_array($RESULT)) {
+				trigger_error("Can't decode query json to results", E_USER_WARNING);
+				return(false);
+			}
+			
+			foreach($RESULT as $result) {
+				$result["query_id"] = $query_id;
+				$return = self::insert_result($queries_table_name, $result);
+				if(!$return) {
+					trigger_error("Can't insert result", E_USER_WARNING);
+					return(false);
+				}
+			}
+		}// foreach($QUERY_ID as $query_id)
+		
+		return(true);
+		
+	}//}}}//
+	
+	static function get_QUERY_ID_with_status(string $queries_table_name, int $status)
+	{//{{{//
+		
+		$_ = [
+			"table" => Data::name(self::$queries_table_prefix.$queries_table_name),
+			"status" => Data::integer($status),
+		];
+		
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+SELECT id FROM '{$_["table"]}' WHERE status={$_["status"]};
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$array = Data::query($sql);
+		if(!is_array($array)) {
+			trigger_error("Exec select query failed", E_USER_WARNING);
+			return(false);
+		}
+		
+		$QUERY_ID = [];
+		foreach($array as $item) {
+			array_push($QUERY_ID, $item["id"]);
+		}
+		
+		return($QUERY_ID);
+		
+	}//}}}//
+	
+	static function create_results_table(string $results_table_name)
+	{//{{{//
+		
+		$_ = [
+			"table" => Data::name(self::$results_table_prefix.$results_table_name),
+		];
+		
+		$sql = 		
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+DROP TABLE IF EXISTS '{$_["table"]}';
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$return = Data::exec($sql);
+		if(!$return) {
+			trigger_error("Exec drop table query failed", E_USER_WARNING);
+			return(false);
+		}
+		
+		$sql = 		
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+CREATE TABLE '{$_["table"]}' (
+	id INTEGER PRIMARY KEY
+	,query_id INTEGER
+	,url TEXT
+	,title TEXT
+	,abstract TEXT
+);
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$return = Data::exec($sql);
+		if(!$return) {
+			trigger_error("Exec create table query failed", E_USER_WARNING);
+			return(false);
+		}
+		
+		return(true);
+		
+	}//}}}//
+	
+	static function get_query_by_id(string $queries_table_name, int $query_id)
+	{//{{{//
+		
+		$_ = [
+			"table" => Data::name(self::$queries_table_prefix.$queries_table_name),
+			"query_id" => Data::integer($query_id),
+		];
+		
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+SELECT * FROM '{$_["table"]}' WHERE id={$_["query_id"]} LIMIT 1;
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$array = Data::query($sql);
+		if(!is_array($array)) {
+			trigger_error("Exec select query failed", E_USER_WARNING);
+			return(false);
+		}
+		
+		if(empty($array)) {
+			trigger_error("Exec select query return empty", E_USER_WARNING);
+			return(false);
+		}
+		
+		return($array[0]);
+		
+	}//}}}//
+	
+	static function insert_result(string $results_table_name, array $result)
+	{//{{{//
+		
+		$_ = [
+			"table" => Data::name(self::$results_table_prefix.$results_table_name),
+		];
+		
+		$number = @Data::get_int($result["query_id"]);
+		if(!is_int($number)) {
+			trigger_error("Can't get query_id integer from result array", E_USER_WARNING);
+			return(false);
+		}
+		$_["query_id"] = Data::integer($number);
+		
+		$string = @Data::get_string($result["url"]);
+		if(!is_string($string)) {
+			trigger_error("Can't get url string from result array", E_USER_WARNING);
+			return(false);
+		}
+		$_["url"] = Data::escape($string);
+		
+		$string = @Data::get_string($result["title"]);
+		if(!is_string($string)) {
+			trigger_error("Can't get title string from result array", E_USER_WARNING);
+			return(false);
+		}
+		$_["title"] = Data::escape($string);
+		
+		$string = @Data::get_string($result["abstract"]);
+		if(!is_string($string)) {
+			trigger_error("Can't get abstract string from result array", E_USER_WARNING);
+			return(false);
+		}
+		$_["abstract"] = Data::escape($string);
+		
+		
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+INSERT INTO '{$_["table"]}' (
+	query_id, url, title, abstract
+) VALUES (
+	{$_["query_id"]}, '{$_["url"]}', '{$_["title"]}', '{$_["abstract"]}'
+);
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$return = Data::exec($sql);
+		if(!$return) {
+			trigger_error("Exec insert query failed", E_USER_WARNING);
+			return(false);
+		}
+		
+		return(true);
+		
+	}//}}}//
+	
+	
+	// export urls to file
+	
+	static function export_urls(string $output_file_path)
+	{//{{{//
+		
+		$output_file_resource = fopen($output_file_path, 'w');
+		if(!is_resource($output_file_resource)) {
+			trigger_error("Can't `fopen` `output_file_path` for write", E_USER_WARNING);
+			return(false);
+		}
+		
+		$results_count = self::get_results_count();
+		if(!is_int($results_count)) {
+			trigger_error("Can't get results count", E_USER_WARNING);
+			return(false);
+		}
+		
+		for($offset = 0; $offset < $results_count; $offset += 1) {
+			if(defined('VERBOSE') && VERBOSE) {
+				echo("\rOffset: {$offset}  Results count: {$results_count}\t\r");
+			}
+		
+			$url = self::get_url_with_offset($offset);
+			if(!is_string($url)) {
+				trigger_error("Can't get url with offset", E_USER_WARNING);
+				return(false);
+			}
+			
+			$url = trim($url);
+			if(empty($url)) continue;
+			
+			$return = fwrite($output_file_resource, "{$url}\n");
+			if(!is_int($return)) {
+				trigger_error("Can't write url to output file", E_USER_WARNING);
+				return(false);
+			}
+		}
+		
+		fclose($output_file_resource);
+		
+		return(true);
+		
+	}//}}}//
+	
+	static function get_results_count()
+	{//{{{//
+		
+		$_ = [
+			"table" => Data::name(self::$results_table),
+		];
+		
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+SELECT COUNT(*) FROM '{$_["table"]}';
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$array = Data::query($sql);
+		if(!is_array($array)) {
+			trigger_error("Can't select count from results table", E_USER_WARNING);
+			return(false);
+		}
+		
+		$results_count = $array[0]["COUNT(*)"];
+		return($results_count);
+		
+	}//}}}//
+	
+	static function get_url_with_offset(int $offset)
+	{//{{{//
+		
+		$_ = [
+			"table" => Data::name(self::$results_table),
+			"offset" => Data::integer($offset),
+		];
+		
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+SELECT url FROM '{$_["table"]}' LIMIT 1 OFFSET {$_["offset"]};
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$array = Data::query($sql);
+		if(!is_array($array)) {
+			trigger_error("Can't select url with offset from results table", E_USER_WARNING);
+			return(false);
+		}
+		
+		if(empty($array)) {
+			trigger_error("Result of select url with offset is empty", E_USER_WARNING);
+			return(false);
+		}
+		
+		$url = $array[0]["url"];
+		return($url);
 		
 	}//}}}//
 	
