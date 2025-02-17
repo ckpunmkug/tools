@@ -1,0 +1,191 @@
+#!/usr/bin/php
+<?php
+
+if(true) // Initialization
+{//{{{//
+
+	set_include_path(__DIR__.'/../include');
+	require_once('class/Args.php');
+	require_once('class/HTTP.php');
+	require_once('function/check_tor_connection.php');
+	
+}//}}}//
+
+if(true) // Args used chars U, M, H, B, P, L, T, R, A, O, J
+{//{{{//
+	
+	Args::$description = "HTTP Loader (3arpy3ka)";
+	Args::add([
+		"-U", "--url", "<URL>", "Make http request to URL",
+		function ($string) {
+			 define('URL', $string);
+		}, true
+	]);
+	Args::add([
+		"-M", "--method", "<http_method>", "GET, POST, HEAD or other HTTP method",
+		function ($string) {
+			 HTTP::$method = $string;
+		}, true
+	]);
+	Args::add([
+		"-H", "--request-headers", "<path_to_file>", "Load http request headers from file",
+		function ($string) {
+ 			 define('HEADERS_FILE_PATH', $string);
+		}, false
+	]);
+	Args::add([
+		"-B", "--request-body", "<path_to_file>", "Load http request body from file",
+		function ($string) {
+ 			 define('BODY_FILE_PATH', $string);
+		}, false
+	]);
+	Args::add([
+		"-P", "--http-proxy", "<IP:port>", "Transmit data via http(s) proxy",
+		function ($string) {
+ 			 define('HTTP_PROXY', $string);
+		}, false
+	]);
+	Args::add([
+		"-L", "--memory-limit", "<number_of_megabytes>", "Set memory limit for script, default 4",
+		function ($string) {
+ 			 define('MEMORY_LIMIT', intval($string));
+		}, false
+	]);
+	Args::add([
+		"-T", "--timeout", "<seconds>", "Set timeout in seconds, default 10",
+		function ($string) {
+ 			 define('TIMEOUT', floatval($string));
+		}, false
+	]);
+	Args::add([
+		"-R", "--redirect", "<number>", "Number of redirects to follow, default 0",
+		function ($string) {
+ 			 define('REDIRECT', intval($string));
+		}, false
+	]);
+	Args::add([
+		"-A", "--user-agent", "<user_agent_string>", "Set http header User-Agent",
+		function ($string) {
+ 			 define('USER_AGENT', $string);
+		}, false
+	]);
+	Args::add([
+		"-O", "--head", NULL, "Output with response headers",
+		function () {
+			 define('HEAD', true);
+		}, false
+	]);
+	Args::add([
+		"-J", "--json", NULL, "Output result in json",
+		function () {
+			 define('JSON', true);
+		}, false
+	]);
+	Args::apply();
+	
+}//}}}//
+
+function main()
+{
+	if(defined('MEMORY_LIMIT')) {
+		$memory_limit = strval(MEMORY_LIMIT).'M';
+	}
+	else {
+		$memory_limit = '4M';
+	}
+	$return = ini_set('memory_limit', $memory_limit);
+	if(!is_string($return)) {
+		trigger_error("Can't set memory limit", E_USER_WARNING);
+		return(false);
+	}
+
+	if(defined('TIMEOUT')) {
+		HTTP::$timeout = TIMEOUT;
+	}
+	else {
+		HTTP::$timeout = floatval(30);
+	}
+	
+	if(defined('REDIRECT') && REDIRECT > 0) {
+		HTTP::$follow_location = 1;
+		HTTP::$max_redirects = REDIRECT + 1;	
+	}
+	else {
+		HTTP::$follow_location = 0;
+		HTTP::$max_redirects = 1;
+	}
+	
+	if(defined('HEADERS_FILE_PATH')) {
+		$return = file_get_contents(HEADERS_FILE_PATH);
+		if(!is_string($return)) {
+			trigger_error("Can't get contents from headers file", E_USER_WARNING);
+			return(false);
+		}
+		$array = explode("\n", $return);
+		$HEADER = [];
+		foreach($array as $string) {
+			$string = trim($string);
+			if(empty($string)) continue;
+			array_push($HEADER, $string);	
+		}
+		HTTP::$header = $HEADER;
+	}
+	
+	if(defined('BODY_FILE_PATH')) {
+		$return = file_get_contents(BODY_FILE_PATH);
+		if(!is_string($return)) {
+			trigger_error("Can't get contents from body file", E_USER_WARNING);
+			return(false);
+		}
+		HTTP::$content = $return;
+	}
+	
+	if(defined('HTTP_PROXY')) {
+		HTTP::$proxy = 'tcp://'.HTTP_PROXY;
+	}
+	
+	if(defined('USER_AGENT')) {
+		HTTP::$user_agent = USER_AGENT;
+	}
+
+	$return = HTTP::request(URL);
+	if(!is_array($return)) {
+		trigger_error("HTTP request failed", E_USER_WARNING);
+		return(false);
+	}
+	$response = $return;
+	
+	if(defined('DEBUG') && DEBUG) {
+		var_dump($response);
+	}
+	else {
+		$result = '';
+		
+		if(defined('JSON')) {
+			$array = [
+				"HEADER" => $response["meta_data"]["wrapper_data"],
+				"body" => $response["contents"],
+			];
+			$result .= json_encode($array, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+		}
+		else {
+			if(defined('HEAD')) {
+				$result .= implode("\r\n", $response["meta_data"]["wrapper_data"]);
+				$result .= "\r\n\r\n";
+			}
+			$result .= $response["contents"];
+		}
+		
+		echo($result);
+	}
+	return(true);
+}
+
+$return = main();
+if($return !== true) {
+	trigger_error("The main call returned an error", E_USER_ERROR);
+	exit(255);
+}
+
+exit(0);
+

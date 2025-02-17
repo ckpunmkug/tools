@@ -46,7 +46,7 @@ function main()
 		
 	}//}}}//
 	
-	if(true) // import, parse nslookup, save geo
+	if(!true) // import, parse nslookup, save geo
 {///////////////////////////////////////////////////////////////{{{//
 
 $return = map::S00_create_table();
@@ -98,6 +98,38 @@ while(true) {//
 }// while(true)
 
 }///////////////////////////////////////////////////////////////}}}//
+	
+	if(true) // create domains list
+	{//{{{//
+		
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+SELECT domain FROM 'S00';
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$return = Data::query($sql);
+		if(!is_array($return)) {
+			trigger_error("", E_USER_WARNING);
+			return(false);
+		}
+		$ARRAY = $return;
+		
+		$result = [];
+		foreach($ARRAY as $array) {
+			$domain = $array["domain"];
+			array_push($result, $domain);
+		}
+		
+		$contents = implode("\n", $result);
+		$return = file_put_contents('./domains.lst', $contents);
+		if(!is_int($return)) {
+			trigger_error("", E_USER_WARNING);
+			return(false);
+		}
+		
+	}//}}}//
+	
 	
 	return(true);
 }
