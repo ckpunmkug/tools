@@ -7,12 +7,12 @@ if(true) // Initialization
 	set_include_path(__DIR__.'/../include');
 	require_once('class/Data.php');
 	require_once('class/Args.php');
-	require_once('function/functions.php');
+	require_once('function/launch.php');
 	require_once('component/map.php');
 	
 }//}}}//
 
-if(true) // Args used chars D, F
+if(true) // Args used chars D, I
 {//{{{//
 	
 	Args::$description = "Scenario";
@@ -34,7 +34,6 @@ if(true) // Args used chars D, F
 
 function main()
 {
-
 	if(true) // open database
 	{//{{{//
 	
@@ -45,93 +44,19 @@ function main()
 		}
 		
 	}//}}}//
-	
-	if(!true) // import, parse nslookup, save geo
-{///////////////////////////////////////////////////////////////{{{//
-
-$return = map::S00_create_table();
-if(!$return) {
-	trigger_error("", E_USER_WARNING);
-	return(false);
-}
-
-$offset = 0;
-$counter = 0;
-while(true) {//
-
-	echo("\r{$counter}");
-	$counter += 1;
-	
-	$return = map::S00_get_nslookup_output($offset);
-	if(!is_array($return)) {
-		if($return === NULL) break;
-		trigger_error("", E_USER_WARNING);
-		return(false);
-	}
-	$offset += 1;
-	$data = $return;
-	
-	//var_dump($offset, $data); if($counter == 2) break; continue;
-	
-	$string = $data[0];
-	$string = trim($string);
-	$expression = '/^Name\:\s+(.+)$/';
-	$return = preg_match($expression, $string, $MATCH);
-	if($return !== 1) continue;
-	$domain = $MATCH[1];
-	
-	$string = $data[1];
-	$string = trim($string);
-	$expression = '/^Address\:\s+(.+)$/';
-	$return = preg_match($expression, $string, $MATCH);
-	if($return !== 1) continue;
-	$ip = $MATCH[1];
-	
-	//var_dump($domain, $ip); if($counter == 2) break;
-	
-	$return = map::S00_put_data($domain, $ip);
-	if(!$return) {
-		trigger_error("", E_USER_WARNING);
-		return(false);
-	}
-	
-}// while(true)
-
-}///////////////////////////////////////////////////////////////}}}//
-	
-	if(true) // create domains list
+	if(!true) // rolling
 	{//{{{//
 		
-		$sql = 
-///////////////////////////////////////////////////////////////{{{//
-<<<HEREDOC
-SELECT domain FROM 'S00';
-HEREDOC;
-///////////////////////////////////////////////////////////////}}}//
-		$return = Data::query($sql);
-		if(!is_array($return)) {
-			trigger_error("", E_USER_WARNING);
-			return(false);
-		}
-		$ARRAY = $return;
-		
-		$result = [];
-		foreach($ARRAY as $array) {
-			$domain = $array["domain"];
-			array_push($result, $domain);
-		}
-		
-		$contents = implode("\n", $result);
-		$return = file_put_contents('./domains.lst', $contents);
-		if(!is_int($return)) {
-			trigger_error("", E_USER_WARNING);
-			return(false);
-		}
+		$return = map::rolling();
+		var_dump($return);
+		return(true);
 		
 	}//}}}//
-	
-	
-	return(true);
+	if(!true) // 
+	{//{{{//
+		
+		
+	}//}}}//
 }
 
 $return = main();

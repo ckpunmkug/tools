@@ -199,24 +199,7 @@ class Data
 		
 	}//}}}//
 	
-	static function escape(string $string)
-	{//{{{//
-		
-		if(!is_object(self::$SQLite3)) {
-			trigger_error("SQLite database is not open", E_USER_WARNING);
-			return(false);
-		}
-		
-		$pattern = '([^\x09\x0D\x0A\x20-\xFF])';
-		$string = preg_replace($pattern, '', $string);
-		
-		$string = self::$SQLite3->escapeString($string);
-		
-		return($string);
-		
-	}//}}}//
-	
-	static function name(string $string)
+	static function table(string $string)
 	{//{{{//
 		
 		if(!is_object(self::$SQLite3)) {
@@ -225,6 +208,40 @@ class Data
 		}
 		
 		$pattern = '([^\x20-\xFF])';
+		$string = preg_replace($pattern, '', $string);
+		
+		$string = self::$SQLite3->escapeString($string);
+		
+		return($string);
+		
+	}//}}}//
+		
+	static function column(string $string)
+	{//{{{//
+		
+		if(!is_object(self::$SQLite3)) {
+			trigger_error("SQLite database is not open", E_USER_WARNING);
+			return(false);
+		}
+		
+		$pattern = '([^\_a-zA-Z0-9])';
+		$string = preg_replace($pattern, '', $string);
+		
+		$string = self::$SQLite3->escapeString($string);
+		
+		return($string);
+		
+	}//}}}//
+
+	static function text(string $string)
+	{//{{{//
+		
+		if(!is_object(self::$SQLite3)) {
+			trigger_error("SQLite database is not open", E_USER_WARNING);
+			return(false);
+		}
+		
+		$pattern = '([^\x09\x0D\x0A\x20-\xFF])';
 		$string = preg_replace($pattern, '', $string);
 		
 		$string = self::$SQLite3->escapeString($string);
@@ -258,6 +275,7 @@ class Data
 		
 		$return = self::$SQLite3->exec($query);
 		if(!$return) {
+			if (defined('DEBUG') && DEBUG) var_dump(['$query' => $query]);
 			trigger_error("Exec SQLite3 failed", E_USER_WARNING);
 			return(false);
 		}
@@ -291,5 +309,73 @@ class Data
 		return($result);
 		
 	}//}}}//
+
+	static function create_table(string $table, array $data)
+	{//{{{//
+		
+		$_ = [];
+		
+		$_["table"] = self::table($table);
+		if(strcmp($_["table"], $table) !== 0) {
+			if (defined('DEBUG') && DEBUG) var_dump([
+				'$_["table"]' => $_["table"],
+				'$table' => $table,
+			]);
+			trigger_error("Table name have incorrect char(s)", E_USER_WARNING);
+			return(false);
+		}
+		$sql = '';
+		
+		$sql .= 
+			"DROP TABLE IF EXISTS '".$_["table"]."';\n"
+			."CREATE TABLE '".$_["table"]."' (\n"
+			."\tid INTEGER PRIMARY KEY\n"
+		;
+		
+		foreach($data as $column => $value) {
+			$_["column"] = Data::column($column);
+			if(strcmp($_["column"], $column) !== 0) {
+				if (defined('DEBUG') && DEBUG) var_dump([
+					'$_["column"]' => $_["column"],
+					$column => $column,
+				]);
+				trigger_error("Column name have incorrect char(s)", E_USER_WARNING);
+				return(false);
+			}
+			
+			$type = gettype($value);
+			switch($type) {
+				case('integer'):
+					$sql .= "\t,{$_['column']} INTEGER";
+					if(!empty($value)) $sql .= ' DEFAULT 0';
+					break;
+				case('double'):
+					$sql .= "\t,{$_['column']} REAL";
+					if(!empty($value)) $sql .= ' DEFAULT 0.0';
+					break;
+				case('string'):
+					$sql .= "\t,{$_['column']} TEXT";
+					if(!empty($value)) $sql .= " DEFAULT ''";
+					break;
+				default:
+					if (defined('DEBUG') && DEBUG) var_dump(['$type' => $type]);
+					trigger_error("Unsupported value type", E_USER_WARNING);
+					return(false);
+			}
+			$sql .= "\n";
+		}
+		
+		$sql .= ");";
+		
+		$return = self::exec($sql);
+		if(!$return) {
+			trigger_error("Can't perform create table query", E_USER_WARNING);
+			return(false);
+		}
+		
+		return(true);
+		
+	}//}}}//
+	
 }
 

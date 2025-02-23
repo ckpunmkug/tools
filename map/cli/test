@@ -1,0 +1,32 @@
+#!/usr/bin/php
+<?php
+
+define('DEBUG', true);
+
+set_include_path(__DIR__.'/../include');
+require_once('class/Data.php');
+
+$database_file = '/../data/database.sqlite';
+$return = Data::open($database_file);
+if(!$return) {
+	trigger_error("Can't open database from file", E_USER_ERROR);
+	exit(255);
+}
+
+if(true) // test create table
+{//{{{//
+	
+	$table = "/test/default";
+	$data = [
+		"number" => 1,
+		"float" => 0.1,
+		"string" => '1',
+	];
+	
+	$return = Data::create_table($table, $data);
+	var_dump($return);
+	
+}//}}}//
+
+exit(0);
+
