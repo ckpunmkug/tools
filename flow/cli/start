@@ -1,0 +1,195 @@
+#!/usr/bin/php
+<?php
+
+if(true) // initialization
+{//{{{//
+	
+	set_include_path(__DIR__.'/../include');
+	require_once('class/Args.php');
+	require_once('class/Data.php');
+	require_once('class/Parser.php');
+	
+}//}}}//
+if(true) // command line arguments; used chars D, I
+{//{{{//
+	
+	Args::$description = "Flow of code";
+	Args::add([
+		"-D", "--database", "<path_to_file>", "Path to database file",
+		function ($string) {
+			define("DATABASE_FILE_PATH", $string);
+		}, true
+	]);
+	Args::add([
+		"-I", "--input-file", "<path_to_file>", "Path to input file",
+		function ($string) {
+			define("INPUT_FILE_PATH", $string);
+		}, false
+	]);
+	Args::add([
+		"-t", "--test", NULL, "Call test block",
+		function () {
+			define('TEST', true);
+		}, false
+	]);
+	Args::apply();
+	
+}//}}}//
+
+function main()
+{
+	if(true) // open database
+	{//{{{//
+	
+		$return = Data::open(DATABASE_FILE_PATH);
+		if(!$return) {
+			trigger_error("Can't open database", E_USER_WARNING);
+			return(false);
+		}
+		
+	}//}}}//
+	if(true && defined('TEST') && TEST) // test block
+	{//{{{//
+		$input_string = 'www.abcd.xyz';
+		$return = Parser::domain($input_string);
+		var_dump($return);
+		return(true);
+	}//}}}//
+	if(!true) // process domains
+	{//{{{//
+		
+		$table_name = '/flow/domains';
+		
+		$return = defined('INPUT_FILE_PATH');
+		if($return !== true) {
+			trigger_error("input file path not passed from command line", E_USER_WARNING);
+			return(false);
+		}
+		$input_file_path = INPUT_FILE_PATH;
+		
+		$return = fopen($input_file_path, 'r');
+		if(!is_resource($return)) {
+			if (defined('DEBUG') && DEBUG) var_dump(['INPUT_FILE_PATH' => INPUT_FILE_PATH]);
+			trigger_error("Can't open input file for read", E_USER_WARNING);
+			return(false);	
+		}
+		$input_file_resource = $return;
+			
+		$table_schema = [
+			"domain" => '',
+			"levels" => 0,
+			"top" => '',
+			"www" => 0,
+		];
+		$return = Data::create_table($table_name, $table_schema);
+		if(!$return) {
+			trigger_error("Can't create domains table", E_USER_WARNING);
+			return(false);
+		}
+		
+		$countup = 0;
+		while(true) {//
+			$return = fgets($input_file_resource);
+			if(!is_string($return)) {
+				break;
+			}
+			$string = trim($return);
+			if(empty($string)) {
+				continue;
+			}
+			
+			$countup += 1;
+			if(defined('VERBOSE') && VERBOSE) {
+					echo("\r {$countup} ");
+			}
+			
+			$return = Parser::domain($string);
+			if(!is_array($return)) {
+				if (defined('DEBUG') && DEBUG) var_dump(['$string' => $string]);
+				trigger_error("Can't parse domain from string", E_USER_WARNING);
+				continue;
+			}
+			$item = $return;
+			
+			$where = [
+				"domain" => $item["domain"],
+			];
+			$return = Data::select_items($table_name, $where, 1);
+			if($return === false) {
+				trigger_error("Can't select domain item from database", E_USER_WARNING);
+				return(false);
+			}
+			
+			if(is_array($return)) {
+				if(defined('VERBOSE') && VERBOSE) {
+						user_error("Domain ".$item["domain"]." exists");
+				}
+				continue;
+			}
+			
+			$return = Data::insert_item($table_name, $item);
+			if(!$return) {
+				trigger_error("Can't insert domain item to database", E_USER_WARNING);
+				return(false);
+			}
+			
+		}// while(true)
+		
+		fclose($input_file_resource);
+		
+	}//}}}//	
+	if(true) // statistics domains
+	{//{{{//
+		
+		$table = '/flow/domains';
+		
+		$return = Data::get_count($table, []);
+		if(!is_int($return)) {
+			trigger_error("Can't get count of all items in domains ", E_USER_WARNING);
+			return(false);
+		}
+		$items_count = $return;
+		
+		$result = [
+			"total" => $items_count,
+			"levels" => [],
+			"top" => [],
+			"www" => 0,
+			
+		];
+		for($offset = 0; $offset < $items_count; $offset += 1) {//
+			$items = Data::select_items($table, [], 1, $offset);
+			if(!is_array($items)) {
+				trigger_error("Can't select 'domains' item", E_USER_WARNING);
+				return(false);
+			}
+			$item = $items[0];
+			
+			if(!key_exists($item["levels"], $result["levels"])) {
+				$result["levels"][$item["levels"]] = 0;
+			}
+			$result["levels"][$item["levels"]] += 1;
+			
+			if(!key_exists($item["top"], $result["top"])) {
+				$result["top"][$item["top"]] = 0;
+			}
+			$result["top"][$item["top"]] += 1;
+			
+			if($item["www"] == 1) {
+				$result["www"] += 1;
+			}
+			
+		}// for($offset = 0; $offset < $items_count; $offset += 1)
+			
+		var_dump($result);
+		
+	}//}}}//
+	return(true);
+}
+
+$return = main();
+if($return !== true) {
+	trigger_error("Main call returned an error", E_USER_ERROR);
+	exit(255);
+}
+return(0);
