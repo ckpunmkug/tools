@@ -1,4 +1,26 @@
 <?php
+
+// Usage
+/*{{{
+
+	$PHPDebugger = new PHPDebugger('/var/www/html/index.php', '/var/www/html', 10, true);
+
+	$commands = 
+<<<'HEREDOC'
+break ZEND_EXIT
+run
+ev var_dump($_SERVER);
+continue
+quit
+HEREDOC;
+	$COMMAND = explode("\n", $commands);
+
+	foreach($COMMAND as $command) {
+		$PHPDebugger->send($command);
+	}
+
+}}}*/
+
 // Excerpts from the pages of help.
 /* {{{
 	-c      -c/my/php.ini       Set php.ini file to load

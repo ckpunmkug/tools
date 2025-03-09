@@ -148,7 +148,17 @@ class Data
 		}
 		
 		$array = explode("\n", $contents);
-		return($array);
+		
+		$result = [];
+		foreach($array as $string) {
+			$string = trim($string);
+			$strlen = strlen($string);
+			if($strlen > 0) {
+				array_push($result, $string);
+			}
+		}
+		
+		return($result);
 		
 	}//}}}//
 	
@@ -310,62 +320,86 @@ class Data
 		
 	}//}}}//
 
-	static function create_table(string $table, array $data)
-	{//{{{//
+	static function create_table(string $table, array $columns, bool $id = true) // bool
+	{//{{{// 
+	
+		// Usage
+		/* {{{
+		$table = '/test';
+		$columns = ['
+			// columns without default values
+			'text0' => '', // strval(false)
+			'integer0' => 0, // intval(false)
+			'real0' => 0.0,
+			// columns with zero default value
+			'text1' => '1', // strval(true)
+			'integer1' => 1, // intval(true)
+			'real1' => 1.0, // floatval(true)
+		];
+		$return = Data::create_table($table, $columns);
+		if($return === false) return(!user_error('Returned FALSE'));
+		
+DROP TABLE IF EXISTS '/test';
+CREATE TABLE '/test' (
+        id INTEGER PRIMARY KEY,
+        text0 TEXT,
+        integer0 INTEGER,
+        real0 REAL,
+        text1 TEXT DEFAULT '',
+        integer1 INTEGER DEFAULT 0,
+        real1 REAL DEFAULT 0.0
+);
+		 }}} */
 		
 		$_ = [];
-		
-		$_["table"] = self::table($table);
-		if(strcmp($_["table"], $table) !== 0) {
-			if (defined('DEBUG') && DEBUG) var_dump([
-				'$_["table"]' => $_["table"],
-				'$table' => $table,
-			]);
-			trigger_error("Table name have incorrect char(s)", E_USER_WARNING);
-			return(false);
-		}
 		$sql = '';
 		
-		$sql .= 
-			"DROP TABLE IF EXISTS '".$_["table"]."';\n"
-			."CREATE TABLE '".$_["table"]."' (\n"
-			."\tid INTEGER PRIMARY KEY\n"
-		;
+		if($id) {
+			$_["columns"] = "\n\tid INTEGER PRIMARY KEY";
+		}
+		else {
+			$_["columns"] = "";
+		}
 		
-		foreach($data as $column => $value) {
-			$_["column"] = Data::column($column);
-			if(strcmp($_["column"], $column) !== 0) {
-				if (defined('DEBUG') && DEBUG) var_dump([
-					'$_["column"]' => $_["column"],
-					$column => $column,
-				]);
-				trigger_error("Column name have incorrect char(s)", E_USER_WARNING);
-				return(false);
+		foreach($columns as $column => $value) {//
+			
+			if(strlen($_["columns"]) > 0) {
+				$_["columns"] .= ',';
 			}
 			
+			$_["column"] = Data::column($column);
+			
 			$type = gettype($value);
-			switch($type) {
+			switch($type) {//
 				case('integer'):
-					$sql .= "\t,{$_['column']} INTEGER";
-					if(!empty($value)) $sql .= ' DEFAULT 0';
+					$_["columns"] .= "\n\t{$_['column']} INTEGER";
+					if(boolval($value)) $_["columns"] .= ' DEFAULT 0';
 					break;
 				case('double'):
-					$sql .= "\t,{$_['column']} REAL";
-					if(!empty($value)) $sql .= ' DEFAULT 0.0';
+					$_["columns"] .= "\n\t{$_['column']} REAL";
+					if(boolval($value)) $_["columns"] .= ' DEFAULT 0.0';
 					break;
 				case('string'):
-					$sql .= "\t,{$_['column']} TEXT";
-					if(!empty($value)) $sql .= " DEFAULT ''";
+					$_["columns"] .= "\n\t{$_['column']} TEXT";
+					if(boolval($value)) $_["columns"] .= " DEFAULT ''";
 					break;
 				default:
 					if (defined('DEBUG') && DEBUG) var_dump(['$type' => $type]);
-					trigger_error("Unsupported value type", E_USER_WARNING);
+					trigger_error("Unsupported column value type", E_USER_WARNING);
 					return(false);
-			}
-			$sql .= "\n";
-		}
+			}// switch($type)
+			
+		}// foreach($columns as $column => $value)
+		$_["columns"] .= "\n";
 		
-		$sql .= ");";
+		$_["table"] = self::table($table);
+		$sql .= 
+///////////////////////////////////////////////////////////////
+<<<HEREDOC
+DROP TABLE IF EXISTS '{$_["table"]}';
+CREATE TABLE '{$_["table"]}' ({$_["columns"]});
+HEREDOC;
+///////////////////////////////////////////////////////////////
 		
 		$return = self::exec($sql);
 		if(!$return) {
@@ -376,7 +410,7 @@ class Data
 		return(true);
 		
 	}//}}}//
-	static function select_items(string $table, array $where = [], int $limit = -1, int $offset = -1)
+	static function select_item(string $table, string $where = '', int $offset = 0) // array
 	{//{{{//
 	
 		$sql = '';
@@ -391,47 +425,15 @@ SELECT * FROM '{$_["table"]}'
 HEREDOC;
 ///////////////////////////////////////////////////////////////}}}//
 		
-		if(!empty($where)) {//
-			$sql .= "\n\tWHERE";
-			$string = '';
-			
-			foreach($where as $column => $value) {//
-				if(!empty($string)) {
-					$string .= ' AND';
-				}
-				$_["column"] = Data::column($column);
-				$type = gettype($value);
-				
-				switch($type) {//
-					case('integer'):
-						$string .= " {$_['column']}=".self::integer($value);
-						break;
-					case('double'):
-						$string .= " {$_['column']}=".self::real($value);
-						break;
-					case('string'):
-						$string .= " {$_['column']}='".self::text($value)."'";
-						break;
-					default:
-						if (defined('DEBUG') && DEBUG) var_dump(['$type' => $type]);
-						trigger_error("Unsupported value type", E_USER_WARNING);
-						return(false);
-				}// switch($type)
-			}// foreach($where as $column => $value)
-			
-			$sql .= $string;
-			
-		}// if(!empty($where))
-		
-		if($limit > 0) {
-			$_["limit"] = self::integer($limit);
-			$sql .= "\n\tLIMIT {$_["limit"]}";
+		$strlen = strlen($where);
+		if($strlen > 0) {
+			$sql .= "\n\tWHERE {$where}";
 		}
 		
-		if($offset >= 0) {
-			$_["offset"] = self::integer($offset);
-			$sql .= "\n\tOFFSET {$_["offset"]}";
-		}
+		$sql .= "\n\tLIMIT 1";
+		
+		$_["offset"] = self::integer($offset);
+		$sql .= "\n\tOFFSET {$_["offset"]}";
 		
 		$sql .= ';';
 		
@@ -442,14 +444,14 @@ HEREDOC;
 		}
 		$result = $return;
 		
-		if(empty($result)) {
+		if(count($result) == 0) {
 			return(NULL);
 		}
 		
-		return($result);
+		return($result[0]);
 		
 	}//}}}//
-	static function insert_item(string $table, array $item)
+	static function insert_item(string $table, array $data)
 	{//{{{//
 	
 		$sql = '';
@@ -466,7 +468,7 @@ HEREDOC;
 		
 		$columns = '';
 		$values = '';
-		foreach($item as $column => $value) {//
+		foreach($data as $column => $value) {//
 			
 			if(strlen($columns) !== 0) {
 				$columns .= ', ';
@@ -507,7 +509,67 @@ HEREDOC;
 		return(true);
 		
 	}//}}}//
-	static function get_count(string $table, array $where = [])
+	static function update_item(string $table, array $data, int $id)
+	{//{{{//
+	
+		$sql = '';
+		$_ = [
+			"table" => self::table($table),
+		];
+		
+		$sql .= 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+UPDATE '{$_["table"]}' SET
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		
+		$string = '';
+		foreach($data as $column => $value) {//
+			$strlen = strlen($string);
+			if($strlen > 0) {
+				$string .= ',';
+			}
+			$string .= "\n\t";
+			
+			$_["column"] = Data::column($column);
+			$string .= $_["column"].'=';
+			
+			$type = gettype($value);
+			switch($type) {//
+				case('integer'):
+					$string .= self::integer($value);
+					break;
+				case('double'):
+					$string .= self::real($value);
+					break;
+				case('string'):
+					$string .= "'".self::text($value)."'";
+					break;
+				default:
+					if (defined('DEBUG') && DEBUG) var_dump(['$type' => $type]);
+					trigger_error("Unsupported value type", E_USER_WARNING);
+					return(false);
+			}// switch($type)
+		}// foreach($where as $column => $value)
+		
+		$sql .= $string;
+		
+		$_["id"] = self::integer($id);
+		$sql .= "\n\tWHERE id={$_['id']}";
+		
+		$sql .= ';';
+		
+		$return = self::exec($sql);
+		if(!$return) {
+			trigger_error("Can't perform database update query", E_USER_WARNING);
+			return(false);
+		}
+		
+		return(true);
+		
+	}//}}}//
+	static function select_count(string $table, string $where = '')
 	{//{{{//
 	
 		$_ = [];
@@ -521,47 +583,17 @@ SELECT COUNT(*) FROM '{$_["table"]}'
 HEREDOC;
 ///////////////////////////////////////////////////////////////}}}//
 		
-		$count = count($where);
-		if($count > 0) {//
-			$string = '';
-			foreach($where as $column => $value) {//
-				$return = is_string($column);
-				if(!$return) {
-					trigger_error("'column' is not string in 'where' array", E_USER_WARNING);
-					return(false);
-				}
-				$_["column"] = self::column($column);
-				
-				$length = strlen($string);
-				if($length > 0) {
-					$string .= ' AND';
-				}
-				
-				$type = gettype($value);
-				switch($type) {//
-					case('integer'):
-						$string .= " {$_['column']}=".self::integer($value);
-						break;
-					case('double'):
-						$string .= " {$_['column']}=".self::real($value);
-						break;
-					case('string'):
-						$string .= " {$_['column']}='".self::text($value)."'";
-						break;
-					default:
-						if (defined('DEBUG') && DEBUG) var_dump(['$type' => $type]);
-						trigger_error("Unsupported value type", E_USER_WARNING);
-						return(false);
-				}// switch($type)
-			}// foreach($where as $column => $value)
-			
-			$sql .= "\n\tWHERE{$string};";
-			
-		}// if($count > 0)
+		$strlen = strlen($where);
+		if($strlen > 0) {
+			$sql .= "\n\tWHERE {$where};";
+		}
+		else {
+			$sql .= ';';
+		}
 		
 		$return = self::query($sql);
 		if(!is_array($return)) {
-			trigger_error("Can't perform 'select count' database query", E_USER_WARNING);
+			trigger_error("Can't perform select count query", E_USER_WARNING);
 			return(false);
 		}
 		$result = $return[0]["COUNT(*)"];

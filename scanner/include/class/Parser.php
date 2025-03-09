@@ -2,9 +2,44 @@
 
 class Parser
 {
-	static function domain(string $input_string)
+	static function getElementsByTagName(string $html, string $tag_name)
 	{//{{{//
 	
+		$result = [];
+
+		$dom = new DOMDocument();
+		$return = $dom->loadHTML($html, LIBXML_NOERROR | LIBXML_NOWARNING);
+
+		if ($return === false) {
+			trigger_error("Can't load html to DOMDocument", E_USER_WARNING);
+			return(false);
+		}
+
+		$list = $dom->getElementsByTagName($tag_name);
+
+		for ($i = 0; $i < $list->length; $i++) {
+
+			$node = $list->item($i);
+			$text = $node->textContent;
+			$attributes = array();
+			
+			for ($j = 0; $j < $node->attributes->length; $j++) {
+			
+				$attribute = $node->attributes->item($j);
+				$attributes[$attribute->nodeName] = $attribute->nodeValue;
+			}
+			
+			array_push($result, [
+				'text' => $text
+				,'attributes' => $attributes
+			]);
+		}
+
+		return $result;
+		
+	}//}}}//
+	static function get_domain_info(string $input_string) // array
+	{//{{{//
 		$info = 
 ///////////////////////////////////////////////////////////////{{{//
 <<<'HEREDOC'
@@ -56,6 +91,24 @@ HEREDOC;
 		$result["domain"] = implode('.', $array);
 		$result["levels"] = count($array);
 		$result["top"] = array_pop($array);
+		
+		return($result);
+		
+	}//}}}//
+	static function get_wordpress_plugins(array $URL)
+	{//{{{//
+		
+		$result = [];
+		foreach($URL as $url) {
+			
+			$regexp = '/^.+\/wp\-content\/plugins\/([^\/]+)\/.+$/';
+			$return = preg_match($regexp, $url, $MATCH);
+			if($return == 1) {
+				if(!in_array($MATCH[1], $result)) {
+					array_push($result, $MATCH[1]);
+				}
+			}
+		}
 		
 		return($result);
 		
