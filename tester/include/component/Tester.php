@@ -1,50 +1,54 @@
 <?php
 
+require_once('class/Launch.php');
+
 class Tester
 {
-	static function main()
-	{//{{{//
+	static $php_files_list = CONFIG['php_files_list'];
+	static $www_dir = CONFIG['www_dir'];
+	static $search_dir = CONFIG['search_dir'];
+	static $screen = '/usr/bin/screen';
 	
-		$return = chdir(WWW_DIR);
+	static function main(string $command)
+	{//{{{//
+		
+		$return = chdir(self::$www_dir);
 		if(!$return) {
-			if (defined('DEBUG') && DEBUG) var_dump(['WWW_DIR' => WWW_DIR]);
 			trigger_error("Can't change to `www` directory", E_USER_WARNING);
 			return(false);
 		}
+	
+		$file = getenv('FILE');
+		if(!is_string($file)) {
+			trigger_error("Can't get `FILE` environment", E_USER_WARNING);
+			return(false);
+		}
+			
+		$number = intval($command);
+		$line = self::get_line($file, $number);
 		
-		if(defined('ACTION')) {
-			switch(ACTION) {
-				case('test'):
-					$return = self::test();
-					if($return === false) return(!user_error('`test` action failed'));
-					break;
-				case('files'):
-					$return = self::files();
-					if($return === false) return(!user_error('`files` action failed'));
-					break;
-				default:
-					trigger_error("Unsupported `action`", E_USER_WARNING);
-					return(false);
-			}
+		$return = strcmp($file, self::$php_files_list);
+		if($return === 0) {
+			$return = self::files_handler($line);
+			return($return);
 		}
 		
-		if(defined('COMMAND')) {
-			$file = getenv('FILE');
-			if(!is_string($file)) {
-				trigger_error("Can't get `FILE` environment", E_USER_WARNING);
-				return(false);
-			}
-			
-			$number = intval(COMMAND);
-			$line = self::get_line($file, $number);
-			$file = WWW_DIR.ltrim($line, '.');
-			
-			self::less($file);
+		$return = strpos($file, self::$search_dir);
+		if($return === 0) {
+			$return = self::search_results_handler($line);
+			return($return);
 		}
+		
+		$return = strpos($file, self::$www_dir);
+		if($return === 0) {
+			$return = self::php_file_handler($file, $number);
+			return($return);
+		} 
 		
 		return(true);
 		
 	}//}}}//
+	
 	static function test()
 	{//{{{//
 		
@@ -52,6 +56,7 @@ class Tester
 		var_dump($return);
 		
 	}//}}}//
+	
 	static function files()
 	{//{{{//
 		
@@ -94,73 +99,7 @@ class Tester
 		goto loop;
 		
 	}//}}}//
-	static function less($file_path)
-	{//{{{//
 	
-		$ENV = self::get_environments();
-		if(!is_array($ENV)) {
-			trigger_error("Can't get environments", E_USER_WARNING);
-			return(false);
-		}
-		$ENV['_'] = LESS_BIN;
-		$ENV['FILE'] = $file_path;
-		
-		$cmd = LESS_BIN.' -N '.$file_path;
-		$STD = [STDIN, STDOUT, STDERR];
-		$PIPE = [];
-		$cwd = WWW_DIR;
-		
-
-		$proc = proc_open($cmd, $STD, $PIPE, $cwd, $ENV);
-		if(!is_resource($proc)) {
-			if (defined('DEBUG') && DEBUG) var_dump(['$cmd' => $cmd]);
-			trigger_error("Can't open process for command", E_USER_WARNING);
-			return(false);
-		}
-		
-		while(true) {//
-			$proc_status = proc_get_status($proc);
-			if(!is_array($proc_status)) {
-				if (defined('DEBUG') && DEBUG) var_dump(['$cmd' => $cmd]);
-				trigger_error("Can't get process status for command", E_USER_WARNING);
-				return(false);
-			}
-			
-			if($proc_status["running"] == false) break;
-			usleep(100000);
-		}// while(true)
-		
-		proc_close($proc);
-		
-	}//}}}//
-	static function get_environments()
-	{//{{{//
-	
-		$NAME = ["LOGNAME", "HOME", "LANG", "TERM", "USER", "PATH"];
-		
-		$result = [];
-		foreach($NAME as $name) {
-			$value = getenv($name);
-			if(!is_string($value)) {
-				if (defined('DEBUG') && DEBUG) var_dump(['$name' => $name]);
-				trigger_error("Can't get environment with given name", E_USER_WARNING);
-				return(false);
-			}
-			$result[$name] = $value;
-		}
-		
-		$cwd = getcwd();
-		if(!is_string($cwd)) {
-			trigger_error("Can't get current working directory", E_USER_WARNING);
-			return(false);
-		}
-		
-		$result["PWD"] = $cwd;
-		$result["SHELL"] = SELF_COMMAND;
-		
-		return($result);
-		
-	}//}}}//
 	static function get_line(string $file_path, int $line_number)
 	{//{{{//
 		
@@ -180,6 +119,62 @@ class Tester
 		}
 		
 		return($LINE[$line_number-1]);
+		
+	}//}}}//
+
+	static function files_handler(string $line)
+	{//{{{//
+		
+		$file = trim($line);
+		Launch::less($file);
+		
+		return(true);
+		
+	}//}}}//
+
+	static function search_result_handler(string $line)
+	{//{{{//
+
+		$pattern = '/^(\d+):(\d+)\s+.+$/';
+		$return = preg_match($pattern, $line, $MATCH);
+		if($return != 1) {
+			if (defined('DEBUG') && DEBUG) var_dump(['$line' => $line]);
+			trigger_error("Can't parse `file number` and `line number` from passed line", E_USER_WARNING);
+			return(false);
+		}
+		$file_number = intval($MATCH[1]);
+		$line_number = intval($MATCH[2]);
+		
+		$return = file(self::$php_files_list, FILE_IGNORE_NEW_LINES);
+		if(!is_array($return)) {
+			trigger_error("Can't get php files list", E_USER_WARNING);
+			return(false);
+		}
+		$PHP_FILE = $return;
+		
+		if(!key_exists($file_number, $PHP_FILE)) {
+			trigger_error("`file number` not exists in `php files` list", E_USER_WARNING);
+			return(false);
+		}
+		$file = $PHP_FILE[$file_number];
+		
+		Launch::less($file, $line_number);
+	
+	}//}}}//
+
+	static function php_file_handler(string $file, int $number)
+	{//{{{//
+	
+		$buf_file = tempnam('/tmp', 'screen_buf');
+		
+		$string = "{$file}:{$number}";
+		file_put_contents($buf_file, $string);
+		
+		system(self::$screen.' -X readbuf '.$buf_file);
+		
+		unlink($buf_file);
+		
+		return(true);
 		
 	}//}}}//
 }

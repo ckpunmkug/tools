@@ -47,7 +47,7 @@ HEREDOC;
 }}} */
 
 class PHPDebugger
-{//{{{
+{
 
 	var $phpdbg = '/usr/bin/phpdbg';
 	var $process = NULL;
@@ -55,13 +55,10 @@ class PHPDebugger
 	var $PIPE = NULL;
 	var $prompt = '';
 	var $timeout = 30;
-	var $verbose = false;
+	var $verbose = true;
 	
-	function __construct(string $file_name, string $cwd, int $timeout = 30, bool $verbose = false)
+	function __construct(string $file_name, string $cwd)
 	{//{{{
-		$this->timeout = $timeout;
-		$this->verbose = $verbose;
-		
 		$command = "{$this->phpdbg} -q -b -I {$file_name}";
 		if (defined('VERBOSE') && VERBOSE) echo($command."\n");
 		
@@ -88,7 +85,6 @@ class PHPDebugger
 		
 		$this->send('set quiet on');
 		$this->send('set pagination off');
-//		$this->send('set stepping opcode');
 	}//}}}
 	
 	function __destruct()
@@ -184,4 +180,5 @@ class PHPDebugger
 		$this->process = NULL;
 	}//}}}
 
-}//}}}
+}
+
