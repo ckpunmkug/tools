@@ -3,5 +3,5 @@
 export XAUTHORITY="/var/local/Xauthority"
 export DISPLAY=":1.0"
 
-su -s /bin/bash -w XAUTHORITY,DISPLAY -l telegram -c /data/telegram/Telegram/Telegram &
+su -s /bin/bash -w XAUTHORITY,DISPLAY -l telegram -c /data/telegram/Telegram/Telegram
 

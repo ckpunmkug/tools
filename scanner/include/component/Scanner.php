@@ -11,6 +11,11 @@ class Scanner
 			return(false);
 		}
 		
+		if(defined('DISPOSABLE_SOURCE_FILE')) {
+			require(DISPOSABLE_SOURCE_FILE);
+			return(true);
+		}
+		
 	}//}}}//
 	static function get_ELEMENT_URL(string $html)
 	{//{{{//

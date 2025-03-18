@@ -222,5 +222,28 @@ class Search
 		
 	}//}}}//
 	
+	static function get_file_path(int $file_number)
+	{//{{{//
+		
+		$file = self::$php_files_list;
+		$contents = file_get_contents($file);
+		if(!is_string($contents)) {
+			if (defined('DEBUG') && DEBUG) var_dump(['$file' => $file]);
+			trigger_error("Can't get contents of `php files list` file", E_USER_WARNING);
+			return(false);
+		}
+		$FILE_PATH = explode("\n", $contents);
+		
+		$return = key_exists($file_number, $FILE_PATH);
+		if(!$return) {
+			if (defined('DEBUG') && DEBUG) var_dump(['$file_number' => $file_number]);
+			trigger_error("File with paased number not exists in list", E_USER_WARNING);
+			return(false);
+		}
+		$file_path = trim($FILE_PATH[$file_number]);
+		
+		return($file_path);
+		
+	}//}}}//
 }
 

@@ -3,5 +3,5 @@
 export XAUTHORITY="/var/local/Xauthority"
 export DISPLAY=":1.0"
 
-su -s /bin/sh -w XAUTHORITY,DISPLAY -l tor-browser -c /data/tor-browser/Browser/start-tor-browser &
+su -s /bin/sh -w XAUTHORITY,DISPLAY -l tor-browser -c /data/tor-browser/Browser/start-tor-browser
 

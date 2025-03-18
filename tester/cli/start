@@ -30,6 +30,12 @@ if(true) // Args
 			define("COMMAND", $string);
 		}, false
 	]);
+	Args::add([
+		"-s", "--string", '<parameters_string>', "Used for pass parameters to action",
+		function ($string) {
+			define("PARAMETERS_STRING", $string);
+		}, false
+	]);
 	Args::apply();
 	
 }//}}}//
@@ -52,6 +58,10 @@ if(defined('TESTER_ACTION'))
 		case('debugger'):
 			require_once('component/Debugger.php');
 			$return = Debugger::main();
+			break;
+		case('source'):
+			require_once('component/Source.php');
+			$return = Source::main();
 			break;
 		default:
 			trigger_error("Action - '".TESTER_ACTION."' not supported", E_USER_WARNING);

@@ -35,7 +35,7 @@ class Tester
 		
 		$return = strpos($file, self::$search_dir);
 		if($return === 0) {
-			$return = self::search_results_handler($line);
+			$return = self::search_result_handler($line);
 			return($return);
 		}
 		
@@ -159,6 +159,8 @@ class Tester
 		$file = $PHP_FILE[$file_number];
 		
 		Launch::less($file, $line_number);
+	
+		return(true);
 	
 	}//}}}//
 

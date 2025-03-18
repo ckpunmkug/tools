@@ -19,5 +19,11 @@ Args::add([
 		define("INPUT_FILE_PATH", $string);
 	}, false
 ]);
+Args::add([
+	"-S", "--disposable-file", "<path_to_file>", "Path to disposable php source file",
+	function ($string) {
+		define("DISPOSABLE_SOURCE_FILE", $string);
+	}, false
+]);
 Args::apply();
 
