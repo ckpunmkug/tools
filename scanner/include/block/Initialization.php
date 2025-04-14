@@ -4,6 +4,7 @@ require_once('class/Args.php');
 require_once('class/Data.php');
 require_once('class/Parser.php');
 require_once('function/launch.php');
+require_once('function/counter.php');
 require_once('component/Scanner.php');
 
 Args::$description = "HTTP(S) Scanner (ckaHep)";

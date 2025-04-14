@@ -4,7 +4,7 @@ require_once('function/launch.php');
 
 class Tracer
 {
-	static $php = '/usr/bin/php';
+	static $php = '/usr/bin/php'.' -c /etc/php/8.2/cli/tester.ini';
 	static $x80 = __DIR__.'/../class/x80.php';
 	static $php_test_file = CONFIG["php_test_file"];
 	static $stdout_file = CONFIG["data_dir"].'/stdout.html';

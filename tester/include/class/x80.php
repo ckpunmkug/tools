@@ -57,7 +57,7 @@ class €
 			break;
 			
 			default:
-			$result = $this->default($code_coverage, $file);
+			$result = $this->default_stop($x80);
 			break;
 		}
 		
@@ -67,7 +67,11 @@ class €
 	
 	private function default_start()
 	{//{{{//
-	
+		
+		if(defined('VERBOSE') && VERBOSE) {
+				user_error("Default start");
+		}
+		
 		if(@is_string($GLOBALS["argv"][1]) != true) {
 			trigger_error("Current trace source not passed in command line", E_USER_ERROR);
 			exit(255);
@@ -80,8 +84,14 @@ class €
 		xdebug_start_code_coverage();
 		
 	}//}}}//
-	private function default_stop(array $code_coverage, string $file)
+	private function default_stop($file)
 	{//{{{//
+	
+		if($file === NULL) {
+			$this->error = true;
+			trigger_error("`x80` not defined for content `path to file for coverage`", E_USER_WARNING);
+			return(false);
+		}
 	
 		$code_coverage = xdebug_get_code_coverage();
 		xdebug_stop_code_coverage();

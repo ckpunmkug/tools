@@ -113,5 +113,47 @@ HEREDOC;
 		return($result);
 		
 	}//}}}//
+
+	static function HEADER(array $HEADER) // UNDER CONSTRUCTION
+	{//{{{//
+		
+		$Status = NULL;
+		$Location = NULL;
+		$Server = NULL;
+		
+		foreach($HEADER as $header) { //
+			$header = trim($header);
+		
+			if($Status == 200) {
+				$pattern = '/^Server\:\s+(.+)$/';
+				if(preg_match($pattern, $header, $MATCH) == 1) {
+					$Server = $MATCH[1];
+					continue;
+				}
+			}
+			else {
+				$pattern = '/^HTTP\/1\.1\s+(\d+).*$/';
+				if(preg_match($pattern, $header, $MATCH) == 1) {
+					$Status = intval($MATCH[1]);
+					continue;
+				}
+				
+				$pattern = '/^Location\:\s+(.+)$/';
+				if(preg_match($pattern, $header, $MATCH) == 1) {
+					$Location = $MATCH[1];
+					continue;
+				}
+			}
+			
+		} // foreach($HEADER as $header)
+		
+		$result = [
+			'Location' => $Location,
+			'Status' => $Status,
+			'Server' => $Server,
+		];
+		return($result);
+		
+	}//}}}//
 }
 

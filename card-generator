@@ -1,0 +1,311 @@
+#!/bin/sh
+#<?php ob_end_clean(); goto start; ?>
+
+VENDOR="ckpunmkug"
+PROJECT="card-generator"
+
+# sh
+# {{{
+
+# initialization
+# {{{
+
+FILE=`/usr/bin/realpath $0`
+DIR=`/usr/bin/dirname ${FILE}`
+BASENAME=`/usr/bin/basename ${FILE}`
+
+HELP="
+Description: 'card-generator' is script for creating greeting cards
+	(The script starts the php built-in web server with authorization)
+Usage: ${BASENAME} <user_name>
+"
+
+if test "${1}" = "-h" -o "${1}" = "--help"
+then
+	echo "${HELP}"
+	exit 0
+fi
+
+error ()
+{
+/usr/bin/echo "Error: ${BASENAME} - ${1}" >&2
+return 255
+}
+
+notice ()
+{
+/usr/bin/echo "${BASENAME} - ${1}"
+return 0
+}
+
+# initialization }}}
+
+# configuration
+# {{{
+
+UID=`/usr/bin/id -r -u`
+GID=`/usr/bin/id -r -g`
+
+if test $UID -eq 0 -o $GID -eq 0
+then
+	if test -z "${1}"
+	then
+		error "User name not set"
+		exit 255
+	fi
+	
+	/usr/bin/su -P -s /bin/sh -l "${1}" -c ${FILE}
+	exit 0
+fi
+
+if test -z "${HOME}"
+then
+	error "Environment 'HOME' is not set"
+	exit 255
+fi
+
+CONFIG_DIR="${HOME}/.config/${VENDOR}/${PROJECT}"
+SHARE_DIR="${HOME}/.local/share/${VENDOR}/${PROJECT}"
+
+. "${CONFIG_DIR}/config.sh"
+
+# configuration }}}
+
+# launch
+# {{{
+
+if test -z "${WEB_SERVER_HOST}"
+then
+	error "'WEB_SERVER_HOST' is not set"
+	exit 255
+fi
+
+if test -z "${WEB_SERVER_PORT}"
+then
+	error "'WEB_SERVER_PORT' is not set"
+	exit 255
+fi
+
+if test -z "${WEB_SERVER_HASH}"
+then
+	error "'WEB_SERVER_HASH' is not set"
+	exit 255
+fi
+
+export WEB_SERVER_HASH="${WEB_SERVER_HASH}"
+
+/usr/bin/php -S ${WEB_SERVER_HOST}:${WEB_SERVER_PORT} "${FILE}"
+exit $?
+
+# launch }}}
+
+# sh }}}
+
+<?php start:
+trigger_error("xxx", E_USER_WARNING);
+return(false);
+
+// authorization
+// {{{
+
+$hash = getenv('WEB_SERVER_HASH', true);
+if(!is_string($hash)) {
+	trigger_error("Environment variable 'WEB_SERVER_HASH' is not set", E_USER_ERROR);
+	exit(255);
+}
+
+$authorization = function(string $hash)
+{//{{{//
+
+$headers = apache_request_headers();
+$r = array_key_exists('Authorization', $headers);
+if ($r !== true) {
+	return(false);
+}
+
+$s = $headers['Authorization'];
+if (preg_match('/^([^\s]+)\s+([^\s]+)$/', $s, $m) !== 1) {
+	return(false);
+}
+$type = $m[1];
+$credentials = $m[2];
+
+if (strcmp($type, 'Basic') !== 0) {
+	return(false);
+}
+
+$credentials_md5 = md5($credentials);
+
+if (strcmp($credentials_md5, $hash) !== 0) {
+	return(false);
+}
+
+return(true);
+
+}; //}}}//
+
+$return = $authorization($hash);
+if ($return !== true) {
+	http_response_code(401);
+	header('WWW-Authenticate: Basic realm="Access to the php built-in web server", charset="UTF-8"');
+	exit(0);
+}
+
+unset($hash, $authorization, $return);
+
+// }}} authorization
+
+// initialization
+// {{{
+
+define('DEBUG', true);
+define('VERBOSE', true);
+define('QUIET', false);
+
+if(defined('QUIET') && QUIET === true) {
+	ini_set('error_reporting', 0);
+	ini_set('display_errors', false);
+}
+else {
+	ini_set('error_reporting', E_ALL);
+	ini_set('display_errors', true);
+	ini_set('html_errors', false);
+}
+
+if(PHP_SAPI == 'cli-server') {
+	file_put_contents('php://stderr', "\n");
+}
+
+header("Content-Security-Policy: frame-ancestors 'self';");
+
+session_start([
+	'cookie_samesite' => 'Strict',
+]);
+if(@is_string($_SESSION["csrf_token"]) != true) {
+	$string = session_id() . uniqid(); 
+	$_SESSION["csrf_token"] = md5($string);
+}
+define('CSRF_TOKEN', $_SESSION["csrf_token"]);
+
+if(@is_string($_SERVER["REQUEST_URI"]) !== true) {
+	trigger_error('Incorrect string $_SERVER["REQUEST_URI"]', E_USER_ERROR);
+}
+$return = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
+if(!is_string($return)) {
+	trigger_error('Parse url from $_SERVER["REQUEST_URI"] failed', E_USER_ERROR);
+}
+define('URL_PATH', $return);
+
+// }}} initialization
+
+// HTML
+// {{{
+
+if(@strval($_SERVER['REQUEST_METHOD'] == 'GET') ob_start
+(function($buffer) {//{{{///
+
+	$buffer = htmlentities($buffer);
+	$buffer = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+		<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0" />
+	<head>
+	<body>
+		<pre>{$buffer}</pre>
+	</body>
+</html>
+
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+	return($buffer);
+
+});//}}}//
+
+class HTML
+{
+	static $head = "";
+	static $title = "";
+	static $styles = [];
+	static $style = "";
+	static $scripts = [];
+	static $script = "";
+	static $body = "";
+	
+	static function generate_stylesheets(array $styles)
+	{//{{{
+		$result = "";
+		foreach($styles as $style) {
+			if(!is_string($style)) continue;
+			$result .= 
+////////////////////////////////////////////////////////////////////////////////
+<<<HEREDOC
+<link rel="stylesheet" href="{$style}" />
+
+HEREDOC;
+////////////////////////////////////////////////////////////////////////////////
+		}
+		return($result);
+	}//}}}
+	
+	static function generate_scripts(array $scripts)
+	{//{{{
+		$result = "";
+		foreach($scripts as $script) {
+			if(!is_string($script)) continue;
+			$result .= 
+////////////////////////////////////////////////////////////////////////////////
+<<<HEREDOC
+<script src="{$script}"></script>
+
+HEREDOC;
+////////////////////////////////////////////////////////////////////////////////
+		}
+		return($result);
+	}//}}}
+
+	static function generate_html()
+	{//{{{
+		$head = self::$head;
+		$title = self::$title;
+		$stylesheets = self::generate_stylesheets(self::$styles);
+		$style = self::$style;
+		$scripts = self::generate_scripts(self::$scripts);
+		$script = self::$script;
+		$body = self::$body;
+		$html = 
+////////////////////////////////////////////////////////////////////////////////
+<<<HEREDOC
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+		<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0" />
+{$head}
+		<title>{$title}</title>
+{$stylesheets}
+		<style>
+{$style}
+		</style>
+{$scripts}
+		<script>
+{$script}
+		</script>
+	</head>
+	<body>
+{$body}
+	</body>
+</html>
+HEREDOC;
+////////////////////////////////////////////////////////////////////////////////
+		return($html);
+	}//}}}
+}
+
+// }}} HTML
+
+user_error('XA!');
+
