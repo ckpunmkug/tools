@@ -1,0 +1,21 @@
+@font-face {
+	font-family: "Terminus";
+	src : url("Terminus.ttf");
+}
+textarea[name='editor'] {
+	font-family: 'Terminus';
+	font-weight: normal;
+	font-size: 20px;
+	line-height: 20px;
+	
+	position: absolute;
+	top: 0px;
+	left: 2px;
+	width: calc(100% - 2px);
+	height: 100%;
+	resize: none;
+	text-wrap: nowrap;
+	
+	outline-style: none;
+	border: none;
+}

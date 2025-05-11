@@ -1,0 +1,38 @@
+{
+	"manifest_version": 2
+	
+	,"version": "0.0"
+	,"name": "Extension with editor template"
+	,"description": "Extension template with script editor and launcher"
+	,"icons": {
+		"48": "icons/icon-48.png"
+	}
+	
+	,"browser_action": {
+		"default_title": "Script editor"
+		,"default_icon": {
+			"16": "icons/icon16.png"
+			,"32": "icons/icon32.png"
+		}
+	}
+	
+	,"commands": {
+		"launch_script_in_background_space": {
+			"description": "Execute script in background script space"
+			,"suggested_key": {
+				"default": "Ctrl+Shift+1"
+			}
+		}
+	}	
+	
+	,"background": {
+		"scripts": ["background.js"]
+	}
+	
+	,"permissions": [
+		"*://*/*"
+		,"tabs"
+		,"scripting"
+	]
+}
+
