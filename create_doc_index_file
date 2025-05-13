@@ -1,0 +1,281 @@
+#!/usr/bin/php
+<?php
+
+class Args 
+{//{{{
+
+	static $description = "";
+	static $config = [];
+	
+	static function help()
+	{//{{{
+		$text = "";
+		if (!empty(self::$description))
+			$text .= "\nDescription: ".self::$description."\n\n";
+		$text .= "Parameters: \n";
+		foreach (self::$config as $config) {
+			$text .= "\n";
+			if(!empty($config[0])) $text .= "  {$config[0]}";
+			if(!empty($config[1])) $text .= "  {$config[1]}";
+			if($config[2] !== null) $text .= "  {$config[2]}";
+			$text .= "\n\t{$config[3]}\n";
+		}
+		echo $text."\n";
+		return NULL;
+	}//}}}
+	
+	static function apply()
+	{//{{{
+		self::add();
+		global $argv;
+		array_walk(self::$config, function(array $config, int $index, array $argv) {
+			$c = count($argv);
+			for ($i = 1; $i < $c; $i++) {
+				if ($argv[$i] == $config[0] || $argv[$i] == $config[1]) {
+					if ($config[2] !== null) {
+						if (!isset($argv[($i+1)])) {
+							trigger_error("\"{$config[2]}\" is not set for \"{$config[0]}\" in command line", E_USER_ERROR);
+							exit(255);
+						}
+						self::$config[$index][4]($argv[$i+1]);
+						return null;
+					} else {
+						self::$config[$index][4]();
+						return null;
+					}
+				}
+			}
+			if (self::$config[$index][5]) {
+				trigger_error("\"{$config[0]}\" is not set in command line", E_USER_ERROR);
+				exit(255);
+			}
+		}, $argv);
+	}//}}}
+	
+	static function add(array $config = [])
+	{//{{{
+		if (!empty($config)) {
+			array_push(self::$config, $config);
+			return null;
+		}
+		self::add([
+			'-v', '--verbose', null, "Allow verbose messages to stderr", 
+			function() {
+				define('VERBOSE', true);
+			}, false
+		]);
+		self::add([
+			'-q', '--quiet', null, "Prevent output to stdout", 
+			function() {
+				define('QUIET', true);
+				ob_start();
+				register_shutdown_function(function () {
+					ob_end_clean();
+				} );
+			}, false
+		]);
+		self::add([
+			'-d', '--debug', null, "Run in debug mode", 
+			function() {
+				define('DEBUG', true);
+			}, false
+		]);
+		array_unshift(self::$config, [
+			'-h', '--help', null, "Show help text and exit",
+			function() {
+				self::help();
+				exit(0);
+			}, false
+		]);
+	}//}}}
+
+}//}}}
+if(true) // Args initialization
+{//{{{//
+
+	Args::$description = 
+		'The script takes all the "html" files from the current directory and creates a list of links from them, adding the directory prefix.'
+		.'Then save the links to the file "index.html" in current directory.'
+	;
+	Args::add([
+		"-p", "--directory-prefix", "<path>", "Prefix to links - the path where the files will be located.",
+		function ($string) {
+			define("DIRECTORY_PREFIX", $string);
+		}, true
+	]);
+	Args::apply();
+	
+}//}}}//
+
+class HTML
+{//{{{
+
+	static $head = "";
+	static $title = "";
+	static $styles = [];
+	static $style = "";
+	static $scripts = [];
+	static $script = "";
+	static $body = "";
+	
+	function __construct()
+	{//{{{
+		ob_start(function($buffer) {
+			$buffer = htmlentities($buffer);
+			$buffer = 
+////////////////////////////////////////////////////////////////////////////////
+<<<HEREDOC
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+		<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0" />
+	<head>
+	<body>
+		<pre>{$buffer}</pre>
+	</body>
+</html>
+
+HEREDOC;
+////////////////////////////////////////////////////////////////////////////////
+			return($buffer);
+		});
+	}//}}}
+	
+	function __wakeup()
+	{//{{{
+		trigger_error("Can't unserialize this class", E_USER_ERROR);
+		exit(255);
+	}//}}}
+	
+	function __destruct()
+	{//{{{
+		$buffer = ob_get_contents();
+		ob_end_clean();
+		$buffer = htmlentities($buffer);
+		
+		if(!empty($buffer)) {
+			HTML::$body = "<pre>{$buffer}</pre>".HTML::$body;
+		}
+		
+		$html = HTML::generate_html();
+		echo($html);
+	}//}}}
+	
+	static function generate_stylesheets(array $styles)
+	{//{{{
+		$result = "";
+		foreach($styles as $style) {
+			if(!is_string($style)) continue;
+			$result .= 
+////////////////////////////////////////////////////////////////////////////////
+<<<HEREDOC
+<link rel="stylesheet" href="{$style}" />
+
+HEREDOC;
+////////////////////////////////////////////////////////////////////////////////
+		}
+		return($result);
+	}//}}}
+	
+	static function generate_scripts(array $scripts)
+	{//{{{
+		$result = "";
+		foreach($scripts as $script) {
+			if(!is_string($script)) continue;
+			$result .= 
+////////////////////////////////////////////////////////////////////////////////
+<<<HEREDOC
+<script src="{$script}"></script>
+
+HEREDOC;
+////////////////////////////////////////////////////////////////////////////////
+		}
+		return($result);
+	}//}}}
+
+	static function generate_html()
+	{//{{{
+		$head = self::$head;
+		$title = self::$title;
+		$stylesheets = self::generate_stylesheets(self::$styles);
+		$style = self::$style;
+		$scripts = self::generate_scripts(self::$scripts);
+		$script = self::$script;
+		$body = self::$body;
+		$html = 
+////////////////////////////////////////////////////////////////////////////////
+<<<HEREDOC
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+		<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0" />
+{$head}
+		<title>{$title}</title>
+{$stylesheets}
+		<style>
+{$style}
+		</style>
+{$scripts}
+		<script>
+{$script}
+		</script>
+	</head>
+	<body>
+{$body}
+	</body>
+</html>
+HEREDOC;
+////////////////////////////////////////////////////////////////////////////////
+		return($html);
+	}//}}}
+	
+}//}}}
+
+function main()
+{//{{{//
+	
+	$return = scandir('.');
+	if(!is_array($return)) {
+		trigger_error("Can't read files list in current directory", E_USER_WARNING);
+		return(false);
+	}
+	$NAME = $return;
+	
+	$prefix = rtrim(DIRECTORY_PREFIX, '/');
+
+	$body = '';
+	foreach($NAME as $name) {
+		if(!is_file($name)) continue;
+		if(preg_match('/^.+\.html$/', $name) != 1) continue;
+		$name = htmlentities($name);
+		$a = '<a href="'."{$prefix}/".$name.'">'.$name."</a><br />\n";
+		$body .= $a;
+	}	
+	
+	HTML::$title = "Content of folder";
+	HTML::$body = $body;
+	
+	$html = HTML::generate_html();
+	
+	if(defined('VERBOSE') && VERBOSE) {
+		echo($html);
+	}
+	
+	$return = file_put_contents('index.html', $html);
+	if(!is_int($return)) {
+		trigger_error("Can't save 'index.html' to current directory", E_USER_WARNING);
+		return(false);
+	}
+	
+	return(true);
+	
+}//}}}//
+$return = main();
+if($return !== true) {
+	trigger_error("Main call returned an error", E_USER_ERROR);
+	exit(255);
+}
+exit(0);
+

@@ -1,0 +1,53 @@
+#!/bin/php
+<?php
+
+define('PAUSE_BEFORE_START', 5);
+
+function main()
+{
+	echo("Wait seconds before start = ".PAUSE_BEFORE_START."\n");
+	sleep(PAUSE_BEFORE_START);
+	
+	exec('notify-send -u low -t 3000 "XDOTOOL WRAPPER STARTED"');
+	
+	$string = exec('xdotool getwindowfocus -f');
+	if(preg_match('/^([0-9]+)$/', $string, $MATCH) != 1) {
+		trigger_error("Can't get 'window id'", E_USER_WARNING);
+		return(false);
+	}
+	$window_id = $MATCH[1];
+
+	$commands = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+xdotool key --window {$window_id} 'Home'
+
+xdotool mousemove --window {$window_id} 180 190
+xdotool key --window {$window_id} click 1
+xdotool key --window {$window_id} 'Ctrl+a'
+xdotool key --window {$window_id} 'Delete'
+xdotool key --window {$window_id} 'Shift+Insert'
+xdotool key --window {$window_id} 'Return'
+
+sleep 3
+
+xdotool key --window {$window_id} 'End'
+xdotool mousemove --window {$window_id} 500 600
+xdotool key --window {$window_id} click 1
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+	
+	echo("Window id = {$window_id}\n");
+	
+	exec('notify-send -u low -t 3000 "XDOTOOL WRAPPER COMPLETE"');
+	return(true);
+}
+
+$return = main();
+if($return !== true) {
+	exec('notify-send -u critical "XDOTOOL WRAPPER ERRROR"');
+	trigger_error("Main call returned an error", E_USER_ERROR);
+	exit(255);
+}
+exit(0);
+

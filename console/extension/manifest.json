@@ -17,10 +17,10 @@
 	}
 	
 	,"commands": {
-		"launch_script_in_background_space": {
-			"description": "Execute script in background script space"
+		"0": {
+			"description": "koMaHga HoJLb"
 			,"suggested_key": {
-				"default": "Ctrl+Shift+1"
+				"default": "Ctrl+Shift+0"
 			}
 		}
 	}	
