@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+		<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0" />
+		<title>Tree template</title>
+<!--		<link rel="stylesheet" href="" />-->
+		<style>
+		
+		</style>
+	</head>
+	<script src="share/script/tree.js"></script>
+	<script>
+var $tree = null;
+function windowOnLoad(event)
+{//{{{//
+	
+	var $return;
+	
+	var $e = document.querySelector("ul[name='tree']");
+	$tree = new treeObject($e);
+	$json = ""+`
+{
+	"<b>aaa</b>": {
+		"<u>bbb</u>": {
+			"ccc": "<h1>CCC</h1>"
+			,"zzz": {
+				"xxx": "XXX"
+				,"yyy": "YYY"
+			}
+		}
+		,"ddd": "<h2>DDD</h2>"
+	}
+	,"eee": "<h3>EEE</h3>"
+}
+`;
+	$tree.create($json);
+	
+	var $index, $length, $node, $string;
+	$length = $tree.nodes.length;
+	for($index = 0; $index < $length; $index += 1) {
+		$node = $tree.nodes[$index];
+		$string = "index="+$index;
+		$node = $node.querySelector("span[name='html']");
+		$string += ", text="+$node.innerText;
+		console.log($string);
+	}
+	
+	/*
+	$tree.collapse(3);
+	$tree.collapse(1);
+	$tree.expand(1);
+	*/
+	
+	/*
+	$tree.collapseAll(1);
+	$tree.expand(1);
+	*/
+	
+	/*
+	$tree.collapse(3);
+	$tree.collapse(1);
+	$tree.expandAll(1);
+	*/
+	
+	/*
+	$json = ""+`
+{
+	"qqq": {
+		"www": {
+			"eee": "EEE"
+		}
+		,"rrr": "RRR"
+	}
+}
+`;
+	$tree.insert(1, $json);
+	*/
+	
+	/*
+	//$tree.delete(7);
+	$tree.delete(1);
+	
+	var $index, $length, $node, $string;
+	for($index in $tree.nodes) {
+		$node = $tree.nodes[$index];
+		if($node != undefined) {
+			$string = "index="+$index;
+			$node = $node.querySelector("span[name='html']");
+			$string += ", text="+$node.innerText;
+			console.log($string);
+		}
+		else {
+			console.log("index="+$index+" - undefined");
+		}
+	}
+	*/
+	
+}//}}}//
+window.addEventListener("load", windowOnLoad);
+	</script>
+	<body>
+		<ul name="tree"></ul>
+	</body>
+</html>
