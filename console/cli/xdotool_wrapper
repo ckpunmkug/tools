@@ -4,168 +4,183 @@
 define('VENDOR', 'ckpunmkug');
 define('PROJECT', 'console');
 
-define('DEBUG', true);
-define('VERBOSE', true);
+// Basic includes, initialization
+if(true) {//{{{//
 
-if(true) // Basic includes
-{//{{{//
+	$return = getenv('HOME', true);
+	if(!is_string($return)) {
+		trigger_error("Environment 'HOME' is not set", E_USER_ERROR);
+		exit(255);
+	}
+	define('HOME', $return);
 
-$include_path = realpath(__DIR__.'/../include');
-if(!is_string($include_path)) {
-	trigger_error("Can't get real path for 'include_path'", E_USER_ERROR);
-	exit(255);
-}
-set_include_path($include_path);
+	set_include_path(__DIR__.'/../include');
+	require_once('class/Args.php');
+	require_once('class/Data.php');
+	require_once('function/launch.php');
+	require_once('component/xdotool_wrapper.php');
+	require_once('component/duckduckgo.php');
 
-require_once('class/Args.php');
+	$config_file = HOME.'/.config/'.VENDOR.'/'.PROJECT.'/config.php';
+	require_once($config_file);
 
-$return = getenv('HOME', true);
-if(!is_string($return)) {
-	trigger_error("Environment variable 'HOME' is not set", E_USER_ERROR);
-	exit(255);
-}
-define('HOME_DIR', $return);
+	$data_file = HOME.'/.cache/'.VENDOR.'/'.PROJECT.'/data.sqlite';
+	$return = Data::open($data_file);
+	if(!$return) {
+		trigger_error("Can't open sqlite database file", E_USER_ERROR);
+		exit(255);
+	}
 
-$config_dir = HOME_DIR.'/.config/'.VENDOR.'/'.PROJECT;
+}//}}}//
 
-$config_file = realpath("{$config_dir}/config.php");
-if(!is_string($config_file)) {
-	trigger_error("Can't get real path for 'config_file'", E_USER_ERROR);
-	exit(255);
-}
-require_once($config_file);
+// Checking for all binaries are present
+if(true) {//{{{//
 
-$cache_dir= HOME_DIR.'/.cache/'.VENDOR.'/'.PROJECT;
-$data_file = "{$cache_dir}/data.sqlite";
-
-require_once('class/Data.php');
-$return = Data::open($data_file);
-if(!$return) {
-	trigger_error("Can't open sqlite database file", E_USER_ERROR);
-	exit(255);
-}
+	if(!file_exists(notify)) {
+		trigger_error(notify." not found. Install 'libnotify-bin' or change path", E_USER_ERROR);
+		exit(255);
+	}
+	
+	if(!file_exists(xdotool)) {
+		trigger_error(xdotool." not found. Install 'xdotool' or change path", E_USER_ERROR);
+		exit(255);
+	}
+	
+	if(!file_exists(import)) {
+		trigger_error(import." not found. Install 'imagemagick' or change path", E_USER_ERROR);
+		exit(255);
+	}
+	
+	if(!file_exists(compare)) {
+		trigger_error(compare." not found. Install 'imagemagick' or change path", E_USER_ERROR);
+		exit(255);
+	}
+	
+	if(!file_exists(xsel)) {
+		trigger_error(xsel." not found. Install 'xsel' or change path", E_USER_ERROR);
+		exit(255);
+	}
 	
 }//}}}//
 
-require_once('component/xdotool_wrapper.php');
+// Args initialization
+if(true) {//{{{//
+		
+	Args::$description = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+Program for automatic search using "duckduckgo" and saving search results.
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
 
-if(true) // Args initialization
-{//{{{//
-	
-Args::$description = "Program description";
+	Args::add([
+		"-G", "--add-grid", NULL, "Add a grid over the image",
+		function () {
+			define("ADD_GRID", true);
+		}, false
+	]);
 
-Args::add([
-	"-G", "--add-grid", NULL, "Add a grid over the image",
-	function () {
-		define("ADD_GRID", true);
-	}, false
-]);
+	Args::add([
+		"-R", "--cut-rectangle", NULL, "Cut rectangle from image",
+		function () {
+			define("CUT_RECTANGLE", true);
+		}, false
+	]);
 
-Args::add([
-	"-R", "--cut-rectangle", NULL, "Cut rectangle from image",
-	function () {
-		define("CUT_RECTANGLE", true);
-	}, false
-]);
+	Args::add([
+		"-I", "--input-file", "<path_to_file>", "Input image file",
+		function ($string) {
+			define("INPUT_FILE", $string);
+		}, false
+	]);
 
-Args::add([
-	"-I", "--input-file", "<path_to_file>", "Input image file",
-	function ($string) {
-		define("INPUT_FILE", $string);
-	}, false
-]);
+	Args::add([
+		"-O", "--output-file", "<path_to_file>", "Output image file",
+		function ($string) {
+			define("OUTPUT_FILE", $string);
+		}, false
+	]);
 
-Args::add([
-	"-O", "--output-file", "<path_to_file>", "Output image file",
-	function ($string) {
-		define("OUTPUT_FILE", $string);
-	}, false
-]);
-
-Args::apply();
+	Args::apply();
 	
 }//}}}//
 
-$return = xdotool_wrapper::preparator();
+$return = xdotool_wrapper::preparation();
 if($return !== true) {
 	trigger_error("Can't prepare for work", E_USER_ERROR);
 	exit(255);
 }
 
-if(true) // Signals handlers initialization
-{//{{{//
+// Signals handlers initialization
+if(true) {//{{{//
 
-cli_set_process_title('command0');
-pcntl_async_signals(true);
+	cli_set_process_title('command0');
+	pcntl_async_signals(true);
+		
+	function hangup_signal_handler()
+	{//{{{//
 	
-function hangup_signal_handler()
-{//{{{//
-	echo("Hangup detected on controlling terminal or death of controlling process\n");
-}//}}}//
-pcntl_signal(SIGHUP, "hangup_signal_handler");
+		echo("Hangup detected on controlling terminal or death of controlling process\n");
+		
+	}//}}}//
+	pcntl_signal(SIGHUP, "hangup_signal_handler");
 
-function continue_signal_handler()
-{//{{{//
-	echo("Continue if stopped\n");
-}//}}}//
-pcntl_signal(SIGCONT, "continue_signal_handler");
-
-function user1_signal_handler()
-{//{{{//
-
-	$return = xdotool_wrapper::is_more_results_button_present();
-	xdotool_wrapper::notice(var_export(['button_present' => $return], true));
-	var_dump(['button_present' => $return]);
+	function continue_signal_handler()
+	{//{{{//
 	
-	/*
-	echo("User-defined signal 1\n");
-	xdotool_wrapper::paste_search_query();
-	*/
+		xdotool_wrapper::continue_grabbing_proccess();
+				
+	}//}}}//
+	pcntl_signal(SIGCONT, "continue_signal_handler");
+
+	function user1_signal_handler()
+	{//{{{//
+
+		$return = xdotool_wrapper::open_full_search_results_list();
+		
+	}//}}}//
+	pcntl_signal(SIGUSR1, "user1_signal_handler");
+
+	function user2_signal_handler()
+	{//{{{//
+
+		xdotool_wrapper::paste_search_query();
+		
+	}//}}}//
+	pcntl_signal(SIGUSR2, "user2_signal_handler");
+
+	function termination_signal_handler()
+	{//{{{//
 	
-}//}}}//
-pcntl_signal(SIGUSR1, "user1_signal_handler");
+		echo("Terminated\n");
+		xdotool_wrapper::notice("xdotool_wrapper: Terminated");
+		exit(0);
+		
+	}//}}}//
+	pcntl_signal(SIGTERM, "termination_signal_handler");
 
-function user2_signal_handler()
-{//{{{//
-
-	echo("User-defined signal 2\n");
-	$return = xdotool_wrapper::is_more_results_button_present();
-	xdotool_wrapper::notice("xdotool_wrapper: ".var_export($return, true));
-	echo("xdotool_wrapper: ".var_export($return, true)."\n");
-	exit(0);
+	function quit_signal_handler()
+	{//{{{//
 	
-}//}}}//
-pcntl_signal(SIGUSR2, "user2_signal_handler");
+		echo("\nQuit\n");
+		exit(0);
+		
+	}//}}}//
+	pcntl_signal(SIGQUIT, "quit_signal_handler");
 
-function termination_signal_handler()
-{//{{{//
-	echo("Termination signal\n");
-	xdotool_wrapper::notice("X do tool wrapper quited");
-	exit(0);
-}//}}}//
-pcntl_signal(SIGTERM, "termination_signal_handler");
-
-function quit_signal_handler()
-{//{{{//
-	echo("Quit from keyboard\n");
-	exit(0);
-}//}}}//
-pcntl_signal(SIGQUIT, "quit_signal_handler");
-
-function interrupt_signal_handler()
-{//{{{//
-	echo("Interrupt from keyboard\n");
-	exit(255);
-}//}}}//
-pcntl_signal(SIGINT, "interrupt_signal_handler");
+	function interrupt_signal_handler()
+	{//{{{//
+	
+		echo("\nInterrupted\n");
+		exit(255);
+		
+	}//}}}//
+	pcntl_signal(SIGINT, "interrupt_signal_handler");
 	
 }//}}}//
 
-$return = xdotool_wrapper::main();
-if($return !== true) {
-	xdotool_wrapper::error("xdotool_wrapper: Error in main call");
-	trigger_error("Main call returned an error", E_USER_ERROR);
-	exit(255);
-}
-exit(0);
+xdotool_wrapper::main();
+xdotool_wrapper::notice("xdotool_wrapper: Error");
+trigger_error("Main call returned an error", E_USER_ERROR);
+exit(255);
 

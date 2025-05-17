@@ -1,5 +1,18 @@
 <?php // network.proxy.no_proxies_on = 127.0.0.1:8080
 
+// config
+$config_dir = getenv('CONFIG_DIR', true);
+if(!is_string($config_dir)) {
+	trigger_error("Environment variable 'CONFIG_DIR' is not set", E_USER_ERROR);
+	exit(255);
+}
+$config_file = realpath("{$config_dir}/config.php");
+if(!is_string($config_file)) {
+	trigger_error("Can't get real path for 'config_file'", E_USER_ERROR);
+	exit(255);
+}
+require_once($config_file);
+
 $include_path = realpath(__DIR__.'/../include');
 if(!is_string($include_path)) {
 	trigger_error("Can't get real path for 'include_path'", E_USER_ERROR);
@@ -9,19 +22,6 @@ set_include_path($include_path);
 
 require_once('class/Initialization.php');
 $Initialization = new Initialization();
-
-$config_dir = getenv('CONFIG_DIR', true);
-if(!is_string($config_dir)) {
-	trigger_error("Environment variable 'CONFIG_DIR' is not set", E_USER_ERROR);
-	exit(255);
-}
-
-$config_file = realpath("{$config_dir}/config.php");
-if(!is_string($config_file)) {
-	trigger_error("Can't get real path for 'config_file'", E_USER_ERROR);
-	exit(255);
-}
-require_once($config_file);
 
 $cache_dir = getenv('CACHE_DIR', true);
 if(!is_string($cache_dir)) {
@@ -39,7 +39,7 @@ if(!$return) {
 
 require_once('class/Main.php');
 
-if(true) // TECTbl
+if(!true) // TECTbl
 {//{{{//
 	
 	$_SERVER["REQUEST_METHOD"] = 'POST';

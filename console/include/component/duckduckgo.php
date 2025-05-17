@@ -11,7 +11,7 @@ class duckduckgo
 			return(false);
 		}
 		
-		$action = @strval($_POST["action"]);
+		$action = @strval($_GET["action"]);
 		switch($action) {
 			case('add_results'):
 				$return = self::add_results();
@@ -83,6 +83,8 @@ class duckduckgo
 	
 	static function add_results()
 	{//{{{//
+		
+		$_POST["data"] = file_get_contents('php://input');
 		
 		/* results data scheme
 		{
@@ -303,22 +305,16 @@ HEREDOC;
 	
 	static function get_next_query()
 	{//{{{//
-	
+		
 		$item = Data::select_item(TABLES["/duckduckgo/queries"], "state=0");
 		if($item === false) {
 			trigger_error("Can't get get 'query' with 'state=0'", E_USER_WARNING);
 			return(false);
 		}
 		
-		if($item === NULL) {
-			$json = Data::encode(NULL);
-			echo($json);
-			return(true);
-		}
+		if($item === NULL) return(NULL);
 		
-		$json = Data::encode($item["text"]);
-		echo($json);
-		return(true);
+		return($item["text"]);
 		
 	}//}}}//
 }

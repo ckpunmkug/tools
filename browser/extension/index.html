@@ -13,33 +13,34 @@
 		<!-- <script src=""></script> -->
  	</head>
 	<body>
-	
-<!-- backend server configuration form {{{-->
-<fieldset name="backend">
-	<legend>backend server configuration</legend>
-	<table>
-		<tr>
-			<td class="tar">url:</td>
-			<td><input name="url" value="" type="text" /></td>
-		</tr>
-		<tr>
-			<td class="tar">user:</td>
-			<td><input name="user" value="" type="text" /></td>
-		</tr>
-		<tr>
-			<td class="tar">password:</td>
-			<td><input name="password" value="" type="password" /></td>
-		</tr> 
-		<tr>
-			<td class="tar">token:</td>
-			<td><input name="token" value="" type="text" /></td>
-		</tr>
-		<tr>
-			<td colspan="2" class="tac"><button name="set">Set</button></td>
-		</tr>
-	</table>
-</fieldset>
-<!--}}} backend server configuration form -->
+
+<div style="
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	height: 100%;
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+">
+	<fieldset name="backend">
+		<legend>backend server configuration</legend>
+		<label>url<br />
+			<input name="url" value="" type="text" />
+		</label>
+		<label>user<br />
+			<input name="user" value="" type="text" />
+		</label>
+		<label>password<br />
+			<input name="password" value="" type="password" />
+		</label>
+		<label>token<br />
+			<input name="token" value="" type="text" />
+		</label>
+		<button name="set">Set</button>
+	</fieldset>
+</div>
 
 	</body>
 </html>

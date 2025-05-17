@@ -1,97 +1,112 @@
+// parse query
+//{{{
 
-var parser = {
+var $query = '';
+var input = document.getElementById("search_form_input");
+if(input !== null) {
+  $query = input.value;
+}
 
-	action: async function($command)
-	{//{{{//
-		
-		//console.log($parserAction);
-		var $return, $parameters;
-		
-		switch($command) {
-			case('h'):
-			case('help'):
-				$help = ''
-///////////////////////////////////////////////////////////////{{{//
-+`
-h help - print this help into extension console
-n next - get next query
-`;
-///////////////////////////////////////////////////////////////}}}//
-				console.log($help);
-				break;
-			case('n'):
-			case('next'):
-				$parameters = {
-					"component": "parser"
-					,"action": "next"
-				};
-				$return = await backendRequest($parameters);
-				if(typeof($return) != "string") {
-					this.error("Can't perform backend request");
-					return(false);
-				}
-				await navigator.clipboard.writeText($return);
-				break;
-		}
-		return(null);
-		
-	}//}}}//
-	
-	,error: async function($message)
-	{//{{{//
-		console.error($message);
-		
-		var $return, $parameters;
-		$parameters = {
-			active: true
-		};
-		var $tab = await browser.tabs.query($parameters);
-		$tab = $tab[0];
-		$parameters = {
-		 	code: 'alert("'+$message+'");'
-		};
-		$return = await browser.tabs.executeScript($tab.id, $parameters);
-	}//}}}//
-	
-	,browserOnCommand: async function()
-	{//{{{//
-		
-		if(typeof(VERBOSE) == 'boolean' && VERBOSE === true) {
-			console.log("parser.browserOnCommand");
-		}
-		var $return;
-		
-		$return = await this.getCommand();
-		this.action($return);
-		
-	}//}}}//
-	
-	,getCommand: async function()
-	{//{{{//
-	
-		var $return, $parameters;
-		
-		$parameters = {
-			active: true
-		};
-		var $tab = await browser.tabs.query($parameters);
-		$tab = $tab[0];
-		if(typeof(DEBUG) == 'boolean' && DEBUG === true) {
-			console.debug('active tab', $tab);
-		}
-		
-		$parameters = {
-		 	code: '$return = prompt("Enter parser command"); $return;'
-		};
-		$return = await browser.tabs.executeScript($tab.id, $parameters);
-		var $command = $return[0];
-		if(typeof(DEBUG) == 'boolean' && DEBUG === true) {
-			console.debug('parser command', $command);
-		}
-		
-		return($command);
-		
-	}//}}}//
-	
-}; 
+//console.log($query);
+
+//}}}
+
+// parse queries
+//{{{
+
+var $RegExpArray = [
+  	/^related\-searches$/,
+  	/.+\srelated\-searches\s.+/,
+  	/.+\srelated\-searches$/,
+  	/^related\-searches\s.+/,
+];
+
+var $NodeList = document.querySelectorAll("div");
+var div = null;
+
+for(let $index = 0; $index < $NodeList.length; $index += 1) {
+  let $item = $NodeList.item($index);
+  let $class = $item.getAttribute("class");
+  
+  let $flag = false;
+  for(let $key in $RegExpArray) {
+    let $RegExp = $RegExpArray[$key];
+
+    if($RegExp.test($class)) {
+      $flag = true;
+      div = $item;
+      break;
+    }
+  }
+  
+  if($flag) break;
+}
+
+var $queries = [];
+if(div !== null) {
+  $NodeList = div.querySelectorAll("a");
+  for(let $index = 0; $index < $NodeList.length; $index += 1) {
+    let $item = $NodeList.item($index);
+    let $text = $item.innerText;
+    $queries.push($text);
+  }
+}
+
+//console.log($queries);
+
+//}}}
+
+/// parse results
+//{{{
+
+var $results = [];
+var LI = document.querySelectorAll("li[data-layout='organic']");
+for(let $i = 0; $i < LI.length; $i += 1) {
+  let li = LI.item($i);
+  let article = li.querySelector("article");
+  let DIV = article.childNodes;
+  
+  let $url = '';
+  let $title = '';
+  let $flag = -1;
+  for(let $j = 0; $j < DIV.length; $j += 1) {
+    let div = DIV.item($j);
+    let a = div.querySelector("a[data-testid='result-title-a']");
+    if(a === null) continue;
+    $url = a.getAttribute("href");
+   	$title = a.innerText;
+    //console.log($title);
+    $flag = $j;
+    break;
+  }
+  
+  let $description = '';
+  if($flag > 0) {
+    let div = DIV.item($flag+1);
+    $description = div.innerText;
+    //console.log($description);
+  }
+  
+  if($url != '' && $title != '' && $description != '') {
+    $results.push({
+      "url": $url,
+      "title": $title,
+      "description": $description
+    });
+  }
+}
+
+//console.log($results);
+
+//}}}
+
+var result = {
+	"queries": $queries,
+	"query": {
+		"text": $query,
+		"results": $results
+	}
+}
+
+result;
 

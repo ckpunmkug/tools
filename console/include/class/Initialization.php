@@ -37,9 +37,9 @@ class Initialization
 	function define()
 	{//{{{//
 	
-		define('DEBUG', true);
-		define('VERBOSE', true);
-		define('QUIET', false);
+		if(!defined('DEBUG')) define('DEBUG', true);
+		if(!defined('VERBOSE')) define('VERBOSE', true);
+		if(!defined('QUIET')) define('QUIET', false);
 		
 		if(@is_string($_SERVER["REQUEST_URI"]) !== true) {
 			trigger_error('Incorrect string $_SERVER["REQUEST_URI"]', E_USER_ERROR);

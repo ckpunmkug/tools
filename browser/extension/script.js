@@ -6,7 +6,7 @@ var backend = {
 		if($backend === null) {
 			$backend = {
 				url: 'http://127.0.0.1:8080/index.php'
-				,user: 'user'
+				,user: ''
 				,'password': ''
 				,'token': ''
 			};
@@ -33,6 +33,7 @@ var backend = {
 	
 	,setItem: async function()
 	{//{{{//
+	
 		var $return = await HTTPLoader('GET', this.url.value, undefined, this.user.value, this.password.value);
 		if(!($return.event == 'load' && $return.status == 200)) {
 			alert("HTTPLoader error");

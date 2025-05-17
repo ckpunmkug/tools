@@ -19,9 +19,9 @@
 	
 	,"commands": {
 		"parser": {
-			"description": "Call the parser commandline"
+			"description": "Call the 'duckduckgo' parser"
 			,"suggested_key": {
-				"default": "Ctrl+Alt+1"
+				"default": "Ctrl+Shift+1"
 			}
 		}
 	}	
@@ -29,7 +29,6 @@
 	,"background": {
 		"scripts": [
 			"script/HTTPLoader.js",
-			"script/parser.js",
 			"background.js"
 		]
 	}
@@ -38,7 +37,6 @@
 		"*://*/*"
 		,"tabs"
 		,"scripting"
-		,"clipboardWrite"
 	]
 }
 

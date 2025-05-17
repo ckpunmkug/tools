@@ -28,13 +28,14 @@ class Main
 	
 	function handle_get_request()
 	{//{{{
+		echo(CSRF_TOKEN);
 		return(true);
 	}//}}}
 	
 	function handle_post_request()
 	{//{{{
 	
-		$component = @strval($_POST["component"]);
+		$component = @strval($_GET["component"]);
 		switch($component) {
 			case('duckduckgo'):
 				require_once('component/duckduckgo.php');
