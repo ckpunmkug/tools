@@ -1,7 +1,7 @@
 <?php
 
-// Usage example
-/*
+// Usage
+/* {{{
 	Args::$description = "Program description";
 	Args::add([
 		"-a", "--A", NULL, "not required parameter",
@@ -28,7 +28,7 @@
 		}, true
 	]);
 	Args::apply();
-*/
+}}} */
 
 class Args 
 {
@@ -36,7 +36,7 @@ class Args
 	static $config = [];
 	
 	static function help()
-	{
+	{//{{{
 		$text = "";
 		if (!empty(self::$description))
 			$text .= "\nDescription: ".self::$description."\n\n";
@@ -50,10 +50,10 @@ class Args
 		}
 		echo $text."\n";
 		return NULL;
-	}
+	}//}}}
 	
 	static function apply()
-	{
+	{//{{{
 		self::add();
 		global $argv;
 		array_walk(self::$config, function(array $config, int $index, array $argv) {
@@ -78,10 +78,10 @@ class Args
 				exit(255);
 			}
 		}, $argv);
-	}
+	}//}}}
 	
 	static function add(array $config = [])
-	{
+	{//{{{
 		if (!empty($config)) {
 			array_push(self::$config, $config);
 			return null;
@@ -115,6 +115,6 @@ class Args
 				exit(0);
 			}, false
 		]);
-	}
+	}//}}}
 }
 

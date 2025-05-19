@@ -2,7 +2,7 @@
 #<?php ob_end_clean(); goto start; ?>
 
 VENDOR="ckpunmkug"
-PROJECT="console"
+PROJECT="browser"
 
 FILE=`/usr/bin/realpath $0`
 DIR=`/usr/bin/dirname ${FILE}`

@@ -2,7 +2,7 @@
 <?php
 
 define('VENDOR', 'ckpunmkug');
-define('PROJECT', 'console');
+define('PROJECT', 'browser');
 
 // Basic includes, initialization
 if(true) {//{{{//
