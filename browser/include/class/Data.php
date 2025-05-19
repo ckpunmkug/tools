@@ -286,7 +286,13 @@ class Data
 		$pattern = '([^\x09\x0D\x0A\x20-\xFF])';
 		$string = preg_replace($pattern, '', $string);
 		
-		$string = self::$SQLite3->escapeString($string);
+		$pattern = '([\'])';
+		$string = preg_replace($pattern, "'||char(39)||'", $string);
+		
+		$pattern = '([\\\\])';
+		$string = preg_replace($pattern, "'||char(92)||'", $string);
+		
+		//$string = self::$SQLite3->escapeString($string);
 		
 		return($string);
 		
