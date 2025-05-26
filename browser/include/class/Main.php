@@ -35,15 +35,33 @@ class Main
 	function handle_post_request()
 	{//{{{
 	
-		$component = @strval($_GET["component"]);
+		if(!eval(C::$S.='$_GET["component"]')) return(false);
+		$component = $_GET["component"];
+		
+		if(!eval(C::$S.='$_GET["action"]')) return(false);
+		$action = $_GET["action"];
+		
+		if(!eval(C::$S.='$_POST["data"]')) return(false);
+		$data = $_POST["data"];
+		
 		switch($component) {
 			case('duckduckgo'):
 				require_once('component/duckduckgo.php');
-				$return = duckduckgo::main();
-				if(!$return) {
-					trigger_error("Main call in component 'duckduckgo' failed", E_USER_WARNING);
+				
+				if(!eval(C::$A.='CONFIG["component"]["duckduckgo"]')) {
+					trigger_error("Incorrect config for 'duckduckgo' component", E_USER_WARNING);
 					return(false);
 				}
+				$config = CONFIG["component"]["duckduckgo"];
+				
+				try {
+					$object = new duckduckgo($config, $action, $data);
+				}
+				catch(Exception $Exception) {
+					trigger_error($Exception->getMessage(), E_USER_WARNING);
+					return(false);
+				}
+				
 				return(true);
 			default:
 				if (defined('DEBUG') && DEBUG) var_dump(['$component' => $component]);

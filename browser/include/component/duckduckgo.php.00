@@ -1,0 +1,400 @@
+<?php
+
+class duckduckgo
+{
+	static $TABLE = [
+		"queries" => NULL,
+		"results" => NULL,
+	];
+
+	static function main()
+	{//{{{//
+	
+		$return = self::initialization();
+		if(!$return) {
+			trigger_error("Initialization failed", E_USER_WARNING);
+			return(false);
+		}
+		
+		$action = @strval($_GET["action"]);
+		switch($action) {
+		
+			case('add_results'):
+				$return = self::add_results();
+				if(!$return) {
+					trigger_error("Can't add results to database", E_USER_WARNING);
+					return(false);
+				}
+				return(true);
+				
+			case('get_next_query'):
+				$return = self::get_next_query();
+				if(!$return) {
+					trigger_error("Can't get next search query", E_USER_WARNING);
+					return(false);
+				}
+				return(true);
+				
+			default:
+				if (defined('DEBUG') && DEBUG) var_dump(['action' => $action]);
+				trigger_error("Unsupported action", E_USER_WARNING);
+				return(false);
+		}
+		
+	}//}}}//
+	
+	static function initialization()
+	{//{{{//
+	
+		if(!isset(CONFIG['database']['tables']['/duckduckgo/queries'])) {
+			trigger_error("CONFIG['database']['tables']['/duckduckgo/queries'] is not set", E_USER_WARNING);
+			return(false);
+		}
+		if(!is_string(CONFIG['database']['tables']['/duckduckgo/queries'])) {
+			trigger_error("CONFIG['database']['tables']['/duckduckgo/queries'] is not string", E_USER_WARNING);
+			return(false);
+		}
+		if(!Data::check_table_name(CONFIG['database']['tables']['/duckduckgo/queries'])) {
+			trigger_error("Incorrect table name", E_USER_WARNING);
+			return(false);
+		}
+		self::$TABLE["queries"] = CONFIG['database']['tables']['/duckduckgo/queries'];
+		
+		if(!isset(CONFIG['database']['tables']['/duckduckgo/results'])) {
+			trigger_error("CONFIG['database']['tables']['/duckduckgo/results'] is not set", E_USER_WARNING);
+			return(false);
+		}
+		
+		if(!is_string(CONFIG['database']['tables']['/duckduckgo/results'])) {
+			trigger_error("CONFIG['database']['tables']['/duckduckgo/results'] is not string", E_USER_WARNING);
+			return(false);
+		}
+		
+		if(!Data::check_table_name(CONFIG['database']['tables']['/duckduckgo/results'])) {
+			trigger_error("Incorrect table name", E_USER_WARNING);
+			return(false);
+		}
+		self::$TABLE["results"] = CONFIG['database']['tables']['/duckduckgo/results'];
+		
+		return(true);
+		
+	}//}}}//
+
+	static function create_tables()
+	{//{{{//
+	
+		if(!(
+			is_string(self::$TABLE["queries"])
+			&& is_string(self::$TABLE["results"])
+		)) 
+	
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+CREATE TABLE IF NOT EXISTS '{$table}' (
+	id INTEGER PRIMARY KEY,
+	query TEXT,
+	state INTEGER,
+	level INTEGER
+);
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$return = Data::exec($sql);
+		if(!$return) {
+			trigger_error("Can't create '/duckduckgo/queries' table", E_USER_WARNING);
+			return(false);
+		}
+		
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+CREATE TABLE IF NOT EXISTS '{$table}' (
+	id INTEGER PRIMARY KEY,
+	query_id INTEGER,
+	url TEXT,
+	title TEXT,
+	description TEXT
+);
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$return = Data::exec($sql);
+		if(!$return) {
+			trigger_error("Can't create '/duckduckgo/results' table", E_USER_WARNING);
+			return(false);
+		}
+		
+		return(true);
+	
+	}//}}}//
+
+	static function add_results()
+	{//{{{//
+		
+		$data = self::get_input_data();
+		if(!is_array($data)) {
+			trigger_error("Can't get input data", E_USER_WARNING);
+			return(false);
+		}
+		
+		$query = self::put_query($data["query"]);
+		if(!is_array($query)) {
+			trigger_error("Unable to put 'queries' into database.", E_USER_WARNING);
+			return(false);
+		}
+		
+		var_dump($query);		
+		
+		return(true);
+		
+		
+		
+		foreach($data["queries"] as $text) {
+			$return = $insert_query($text);
+			if(!$return) {
+				trigger_error("Insert query failed", E_USER_WARNING);
+				return(false);
+			}
+		}
+		
+		$return = $insert_query($data["query"]["text"]);
+		if(!$return) {
+			trigger_error("Insert query failed", E_USER_WARNING);
+			return(false);
+		}
+				
+		$text = Data::text($data["query"]["text"]);
+		$item = Data::select_item(TABLES["/duckduckgo/queries"], "text='{$text}'");
+		if(!is_array($item)) {
+			trigger_error("Can't select 'query' with passed 'text'", E_USER_WARNING);
+			return(false);
+		}
+		$query_id = $item["id"];
+		
+		$table = Data::table(TABLES["/duckduckgo/results"]);
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+DELETE FROM '{$table}' WHERE query_id=$query_id;
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$return = Data::exec($sql);
+		if(!$return) {
+			trigger_error("Can't delete past results", E_USER_WARNING);
+			return(false);
+		}
+		
+		foreach($data["query"]["results"] as $result) {
+			$data = [
+				'query_id' => $query_id,
+				'url' => $result["url"],
+				'title' => $result["title"],
+				'description' => $result["description"],
+			];
+			$return = Data::insert_item(TABLES["/duckduckgo/results"], $data);
+			if(!$return) {
+				trigger_error("Can't insert 'result' into database", E_USER_WARNING);
+				return(false);
+			}
+		}
+		
+		$return = Data::update_item(TABLES["/duckduckgo/queries"], ["state" => 1], $query_id);
+		if(!$return) {
+			trigger_error("Can't update 'state' for 'query'", E_USER_WARNING);
+			return(false);
+		}
+		
+		return(true);
+		
+	}//}}}//
+	
+	static function get_next_query()
+	{//{{{//
+		
+		$item = Data::select_item(TABLES["/duckduckgo/queries"], "state=0");
+		if($item === false) {
+			trigger_error("Can't get get 'query' with 'state=0'", E_USER_WARNING);
+			return(false);
+		}
+		
+		if($item === NULL) return(NULL);
+		
+		return($item["text"]);
+		
+	}//}}}//
+
+	static function get_input_data()
+	{//{{{//
+	
+		/* data scheme
+		{
+			 "query": string
+			,"queries": [ string_0 ... string_N ]
+			,"results": [
+				{
+					"url": string
+					,"title": string
+					,"description: string
+				}
+				...
+			]
+		}
+		*/
+	
+		$result = [];
+		
+		if(!isset($_POST["data"])) {
+			$_POST["data"] = file_get_contents('php://input');
+			if(!is_string($_POST["data"])) {
+				trigger_error("Can't get contents from php://input", E_USER_WARNING);
+				return(false);
+			}
+		}
+	
+		$data = Data::json_decode($_POST["data"]);
+		if(!is_array($data)) {
+			if (defined('DEBUG') && DEBUG) var_dump(['json' => $data]);
+			trigger_error("Can't decode json data into array", E_USER_WARNING);
+			return(false);
+		}
+		
+		if(true) // $data["query"]
+		{//{{{//
+		
+			if(!isset($data["query"])) {
+				trigger_error('$data["query"] is not set', E_USER_WARNING);
+				return(false);
+			}
+			if(!is_string($data["query"])) {
+				trigger_error('$data["query"] is not string', E_USER_WARNING);
+				return(false);
+			}
+			$result["query"] = $data["query"];
+			
+		}//}}}//
+		
+		if(true) // $data["queries"]
+		{//{{{//
+		
+			if(!isset($data["queries"])) {
+				trigger_error('$data["queries"] is not set', E_USER_WARNING);
+				return(false);
+			}
+			if(!is_array($data["queries"])) {
+				trigger_error('$data["queries"] is not array', E_USER_WARNING);
+				return(false);
+			}
+			$result["queries"] = [];
+			foreach($data["queries"] as $item) {
+				if(!is_string($item)) {
+					trigger_error('$data["queries"] item is not string', E_USER_WARNING);
+					return(false);
+				}
+				array_push($result["queries"], $item);
+			}
+			
+		}//}}}//
+		
+		if(true) // $data["results"]
+		{//{{{//
+			
+			if(!isset($data["results"])) {
+				trigger_error('$data["results"] is not set', E_USER_WARNING);
+				return(false);
+			}
+			if(!is_array($data["results"])) {
+				trigger_error('$data["results"] is not array', E_USER_WARNING);
+				return(false);
+			}
+			$result["results"] = [];
+			
+			foreach($data["results"] as $item) {
+				if(!is_array($item)) {
+					trigger_error('$data["results"] item is not array', E_USER_WARNING);
+					return(false);
+				}
+				
+				if(!isset($item["url"])) {
+					trigger_error('$item["url"] of $data["results"] is not set', E_USER_WARNING);
+					return(false);
+				}
+				if(!is_string($item["url"])) {
+					trigger_error('$item["url"] of $data["results"] is not string', E_USER_WARNING);
+					return(false);
+				}
+				
+				if(!isset($item["title"])) {
+					trigger_error('$item["title"] of $data["results"] is not set', E_USER_WARNING);
+					return(false);
+				}
+				if(!is_string($item["title"])) {
+					trigger_error('$item["title"] of $data["results"] is not string', E_USER_WARNING);
+					return(false);
+				}
+				
+				if(!isset($item["description"])) {
+					trigger_error('$item["description"] of $data["results"] is not set', E_USER_WARNING);
+					return(false);
+				}
+				if(!is_string($item["description"])) {
+					trigger_error('$item["description"] of $data["results"] is not string', E_USER_WARNING);
+					return(false);
+				}
+				
+				array_push($result["results"], [
+					"url" => $item["url"],
+					"title" => $item["title"],
+					"description" => $item["description"],
+				]);
+			}
+			
+		}//}}}//
+		
+		return($result);
+		
+	}//}}}//
+
+	static function put_query(string $query, int $parent_id, int $level)
+	{//{{{//
+		
+		$table = self::$TABLE["queries"];
+		$query = base64_encode($query);
+		
+		begin_label:
+		
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+SELECT * FROM '{$table}' WHERE query='{$query}';
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$result = Data::query($sql);
+		if(!is_array($result)) {
+			trigger_error("Can't perform database query - 'select from queries'", E_USER_WARNING);
+			return(false);
+		}
+		
+		if(count($result) > 0) {
+			$result = $result[0];
+			return($result);
+		}
+		
+		$state = 0;
+		$level = 0;
+		
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+INSERT INTO '{$table}' (query, state, level) VALUES ('{$query}', {$state}, {$level});
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$return = Data::exec($sql);
+		if(!$return) {
+			trigger_error("Can't perform database query - 'insert into queries'", E_USER_WARNING);
+			return(false);
+		}
+		
+		goto begin_label;
+		
+	}//}}}//
+}
+

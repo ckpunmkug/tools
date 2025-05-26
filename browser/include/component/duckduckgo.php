@@ -2,300 +2,462 @@
 
 class duckduckgo
 {
-	static function main()
+	var $TABLE = [
+		"query" => NULL,
+		"result" => NULL,
+	];
+	
+	function __construct(array $config, string $action, string $data)
 	{//{{{//
 	
-		$return = self::initialization();
+		$return = $this->set_config($config);
 		if(!$return) {
-			trigger_error("Initialization failed", E_USER_WARNING);
+			$error_string = "Set config failed";
+			goto error_label;
+		}
+	
+		if($action == 'reset') {
+			$return = $this->reset();
+			if(!$return) {
+				$error_string = "'reset' action failed";
+				goto error_label;
+			}
+			return(NULL);
+		}
+	
+		$return = $this->main($action, $data);
+		if(!$return) {
+			$error_string = "'main' call failed";
+			goto error_label;
+		}
+	
+		return(NULL);
+		
+		error_label:
+		trigger_error($error_string, E_USER_WARNING);
+		throw new Exception("Component 'duckduckgo' failed");
+		
+	}//}}}//
+	
+	function set_config(array $config)
+	{//{{{//
+		
+		if(!eval(C::$S.='$config["database"]["table"]["query"]')) return(false);
+		if(!Data::check_table_name($config["database"]["table"]["query"])) {
+			trigger_error("Incorrect 'query' table name", E_USER_WARNING);
 			return(false);
 		}
+		$this->TABLE["query"] = $config["database"]["table"]["query"];
 		
-		$action = @strval($_GET["action"]);
+		if(!eval(C::$S.='$config["database"]["table"]["result"]')) return(false);
+		if(!Data::check_table_name($config["database"]["table"]["result"])) {
+			trigger_error("Incorrect 'result' table name", E_USER_WARNING);
+			return(false);
+		}
+		$this->TABLE["result"] = $config["database"]["table"]["result"];
+		
+		return(true);
+		
+	}//}}}//
+
+	function main(string $action, string $data)
+	{//{{{//
+	
+		$return = $this->create_tables();
+		if(!$return) {
+			trigger_error("Can't create tables", E_USER_WARNING);
+			return(false);
+		}
+	
 		switch($action) {
-			case('add_results'):
-				$return = self::add_results();
-				if(!$return) {
-					trigger_error("Can't add results to database", E_USER_WARNING);
+		
+			case('put_query_results'):
+				$return = $this->put_query_results($data);
+				if(!is_array($return)) {
+					trigger_error("Can't put query results to database", E_USER_WARNING);
 					return(false);
 				}
-				return(true);
+				return($return);
+				
 			case('get_next_query'):
-				$return = self::get_next_query();
-				if(!$return) {
+				$return = $this->get_next_query();
+				if($return === false) {
 					trigger_error("Can't get next search query", E_USER_WARNING);
 					return(false);
 				}
-				return(true);
+				return($return);
+				
 			default:
-				if (defined('DEBUG') && DEBUG) var_dump(['$action' => $action]);
+				if (defined('DEBUG') && DEBUG) var_dump(['action' => $action]);
 				trigger_error("Unsupported action", E_USER_WARNING);
 				return(false);
 		}
 		
 	}//}}}//
-	
-	static function initialization()
+
+/// ACTIONS
+
+	function reset()
 	{//{{{//
 	
-		if(!defined('TABLES')) {
-			trigger_error("'TABLES' constant not defined", E_USER_WARNING);
+		$return = $this->drop_tables();
+		if(!$return) {
+			trigger_error("Can't drop tables", E_USER_WARNING);
 			return(false);
 		}
-		
-		$SCHEMA = [
-			'/duckduckgo/queries' => [
-				'text' => '',
-				'state' => 1,
-			],
-			'/duckduckgo/results' => [
-				'query_id' => 0,
-				'url' => '',
-				'title' => '',
-				'description' => '',
-			],
-		];
-		
-		foreach($SCHEMA as $table => $columns) {
-		
-			$return = @Data::get_string(TABLES[$table]);
-			if(!is_string($return)) {
-				trigger_error("Table '{$table}' is not set in config file", E_USER_WARNING);
-				return(false);
-			}
-			$table = $return;
-			
-			$return = Data::table_exists($table);
-			if(!$return) {
-				$return = Data::create_table($table, $columns);
-				if(!$return) {
-					if (defined('DEBUG') && DEBUG) var_dump(['$table' => $table]);
-					trigger_error("Can't create table in database", E_USER_WARNING);
-					return(false);
-				}
-			}
-			
-		} // foreach($SCHEMA as $table => $columns)
 		
 		return(true);
 		
 	}//}}}//
 	
-	static function add_results()
+	function put_query_results(string $data)
 	{//{{{//
 		
-		$_POST["data"] = file_get_contents('php://input');
-		
-		/* results data scheme
-		{
-			"queries": [ string_0 ... string_N ]
-			,"query": {
-				"text": string
-				,"results": [
-					{
-						"url": string
-						,"title": string
-						,"description: string
-					}
-					...
-				]
-			}
-		}
-		*/
-		
-		$check_input = function()
+		$get_data_array_from_json = function(string $data)
 		{//{{{//
 			
-			$result = [];
+			$R = [];
 			
-			// data
-			
-			$json = @Data::get_string($_POST["data"]);
-			if(!is_string($json)) {
-				if (defined('DEBUG') && DEBUG) var_dump(['$_POST["data"]' => $_POST["data"]]);
-				trigger_error("Can't get 'data' from POST", E_USER_WARNING);
-				return(false);
-			}
-			
-			$data = Data::decode($json);
+			$data = Data::json_decode($data);
 			if(!is_array($data)) {
-				if (defined('DEBUG') && DEBUG) var_dump(['$json' => $json]);
-				trigger_error("Can't decode 'data' from json", E_USER_WARNING);
+				trigger_error("Can't decode input data from json to array", E_USER_WARNING);
 				return(false);
 			}
 			
-			// queries
+			if(!eval(C::$S.='$data["query"]')) return(false);
+			$R["query"] = $data["query"];
 			
-			$queries = @Data::get_array($data["queries"]);
-			if(!is_array($queries)) {
-				if (defined('DEBUG') && DEBUG) var_dump(['$data' => $data]);
-				trigger_error("Can't get array 'queries' from data", E_USER_WARNING);
-				return(false);
-			}
-			$result["queries"] = [];
-			
-			foreach($queries as $string) {
-				if(!is_string($string)) {
-					if (defined('DEBUG') && DEBUG) var_dump(['$queries' => $queries]);
-					trigger_error("Item in 'queries' is not string", E_USER_WARNING);
-					return(false);
-				}
-				array_push($result["queries"], $string);
+			if(!eval(C::$A.='$data["queries"]')) return(false);
+			$R["queries"] = [];
+			foreach($data["queries"] as $key => $value) {
+				if(!eval(C::$S.='$data["queries"][$key]')) return(false);
+				array_push($R["queries"], $data["queries"][$key]);
 			}
 			
-			// query
-			
-			$query = @Data::get_array($data["query"]);
-			if(!is_array($query)) {
-				if (defined('DEBUG') && DEBUG) var_dump(['$data' => $data]);
-				trigger_error("Can't get 'query' array from 'data'", E_USER_WARNING);
-				return(false);
-			}
-			$result["query"] = [];
-			
-			$text = @Data::get_string($query["text"]);
-			if(!is_string($text)) {
-				if (defined('DEBUG') && DEBUG) var_dump(['$query' => $query]);
-				trigger_error("Can't get 'text' string from 'query'", E_USER_WARNING);
-				return(false);
-			}
-			$result["query"]["text"] = $text;
-			
-			// query["results"]
-			
-			$results = @Data::get_array($query["results"]);
-			if(!is_array($results)) {
-				if (defined('DEBUG') && DEBUG) var_dump(['$query' => $query]);
-				trigger_error("Can't get 'results' array from 'query'", E_USER_WARNING);
-				return(false);
-			}
-			$result["query"]["results"] = [];
-			
-			foreach($results as $array) {
-				if(!is_array($array)) {
-					if (defined('DEBUG') && DEBUG) var_dump(['$results' => $results]);
-					trigger_error("Item in 'results' is not array", E_USER_WARNING);
-					return(false);
-				}
-				
-				$url = @Data::get_string($array["url"]);
-				if(!is_string($url)) {
-					if (defined('DEBUG') && DEBUG) var_dump(['$results' => $results]);
-					trigger_error("Can't get string 'url' from 'results' item", E_USER_WARNING);
-					return(false);
-				}
-				
-				$title = @Data::get_string($array["title"]);
-				if(!is_string($title)) {
-					if (defined('DEBUG') && DEBUG) var_dump(['$results' => $results]);
-					trigger_error("Can't get string 'title' from 'results' item", E_USER_WARNING);
-					return(false);
-				}
-				
-				$description = @Data::get_string($array["description"]);
-				if(!is_string($description)) {
-					if (defined('DEBUG') && DEBUG) var_dump(['$results' => $results]);
-					trigger_error("Can't get string 'description' from 'results' item", E_USER_WARNING);
-					return(false);
-				}
-				
-				array_push($result["query"]["results"], [
-					"url" => $url,
-					"title" => $title,
-					"description" => $description,
+			if(!eval(C::$A.='$data["results"]')) return(false);
+			$R["results"] = [];
+			foreach($data["results"] as $key => $value) {
+				if(!eval(C::$A.='$data["results"][$key]')) return(false);
+				if(!eval(C::$S.='$data["results"][$key]["url"]')) return(false);
+				if(!eval(C::$S.='$data["results"][$key]["title"]')) return(false);
+				if(!eval(C::$S.='$data["results"][$key]["description"]')) return(false);
+				array_push($R["results"], [
+					"url" => $data["results"][$key]["url"],
+					"title" => $data["results"][$key]["title"],
+					"description" => $data["results"][$key]["description"],
 				]);
-				
-			} // foreach($results as $array)
+			}
 			
-			return($result);
+			return($R);
 			
 		};//}}}//
-		
-		$data = $check_input();
+	
+		$data = $get_data_array_from_json($data);
 		if(!is_array($data)) {
-			trigger_error("Check input data failed", E_USER_WARNING);
+			trigger_error("Can't get data array from json", E_USER_WARNING);
 			return(false);
 		}
 		
-		$insert_query = function(string $text)
+		$put_query = function (string $text)
 		{//{{{//
-		
-			$table = TABLES["/duckduckgo/queries"];
-			$text = Data::text($text);
 			
-			$item = Data::select_item($table, "text='{$text}'");
-			if($item === false) {
-				trigger_error("Can't select 'query' by 'text'", E_USER_WARNING);
+			$query = $this->select_query_by_text($text);
+			if($query === false) {
+				trigger_error("Can't select 'query' by text from database", E_USER_WARNING);
+				return(false);
+			}
+			if(is_array($query)) {
+				return($query);
+			}
+			
+			$query = [
+				"parent" => 0,
+				"level" => 0,
+				"text" => $text,
+				"state" => 0,
+			];
+			
+			$query = $this->insert_query($query);
+			if(!is_array($query)) {
+				trigger_error("Can't insert 'query' to database", E_USER_WARNING);
 				return(false);
 			}
 			
-			if($item === NULL) {
-				$data = [
-					'text' => $text,
-				];
-				$return = Data::insert_item($table, $data);
-				if(!$return) {
-					trigger_error("Can't insert 'text' to 'queries'", E_USER_WARNING);
+			return($query);
+			
+		};//}}}//
+		$query = $put_query($data["query"]);
+		if(!is_array($query)) {
+			trigger_error("Can't put 'query' to database", E_USER_WARNING);
+			return(false);
+		}
+		
+		$put_queries = function(array $query, array $queries)
+		{//{{{//
+			
+			if(!eval(C::$I.='$query["id"]')) return(false);
+			$parent = $query["id"];
+			
+			if(!eval(C::$I.='$query["level"]')) return(false);
+			$level = $query["level"]+1;
+			
+			$R = [];
+			
+			foreach($queries as $text) {
+				$query = $this->select_query_by_text($text);
+				if($query === false) {
+					trigger_error("Can't select query by text", E_USER_WARNING);
 					return(false);
 				}
+				
+				if($query === NULL) {
+					$query = [
+						"parent" => $parent,
+						"level" => $level,
+						"text" => $text,
+						"state" => 0,
+					];
+					$query = $this->insert_query($query);
+					if(!is_array($query)) {
+						trigger_error("Can't insert 'query' into database", E_USER_WARNING);
+						return(false);
+					}
+				}
+				
+				array_push($R, $query);
 			}
 			
-			return(true);
+			return($R);
 			
 		};//}}}//
+		$queries = $put_queries($query, $data["queries"]);
+		if(!is_array($queries)) {
+			trigger_error("Can't put 'queries' to database", E_USER_WARNING);
+			return(false);
+		}
 		
-		foreach($data["queries"] as $text) {
-			$return = $insert_query($text);
-			if(!$return) {
-				trigger_error("Insert query failed", E_USER_WARNING);
+		$put_results = function(array $query, array $results)
+		{//{{{//
+			
+			if(!eval(C::$I.='$query["id"]')) return(false);
+			$query = $query["id"];
+			
+			$r = $this->delete_results_by_query($query);
+			if(!$r) {
+				trigger_error("Can't delete 'results' by 'query'", E_USER_WARNING);
 				return(false);
 			}
-		}
+			
+			foreach($results as $key => $result) {
+				$result["query"] = $query;
+				$r = $this->insert_result($result);
+				if(!is_array($r)) {
+					trigger_error("Can't insert 'result' into database", E_USER_WARNING);
+					return(false);
+				}
+				$results[$key] = $r;
+			}
+			
+			return($results);
+			
+		};//}}}//
+		$results = $put_results($query, $data["results"]);
 		
-		$return = $insert_query($data["query"]["text"]);
-		if(!$return) {
-			trigger_error("Insert query failed", E_USER_WARNING);
+		$query["state"] = 1;
+		$r = $this->update_query_by_id($query);
+		if(!$r) {
+			trigger_error("Can't update 'query' by 'id' in database", E_USER_WARNING);
 			return(false);
 		}
-				
-		$text = Data::text($data["query"]["text"]);
-		$item = Data::select_item(TABLES["/duckduckgo/queries"], "text='{$text}'");
-		if(!is_array($item)) {
-			trigger_error("Can't select 'query' with passed 'text'", E_USER_WARNING);
+		
+		$R = [
+			"query" => $query,
+			"queries" => $queries,
+			"results" => $results,
+		];
+		
+		return($R);
+	
+	}//}}}//
+
+	function get_next_query()
+	{//{{{//
+		
+		$query = $this->select_query_by_state(0);
+		if($query === false) {
+			trigger_error("Can't select 'query' by 'state' from database", E_USER_WARNING);
 			return(false);
 		}
-		$query_id = $item["id"];
 		
-		$table = Data::table(TABLES["/duckduckgo/results"]);
+		return($query);
+		
+	}//}}}//
+
+/// DATABASE
+	
+	function create_tables()
+	{//{{{//
+		
+		$table = $this->TABLE["query"];
 		$sql = 
 ///////////////////////////////////////////////////////////////{{{//
 <<<HEREDOC
-DELETE FROM '{$table}' WHERE query_id=$query_id;
+CREATE TABLE IF NOT EXISTS '{$table}' (
+	id INTEGER PRIMARY KEY
+	,parent INTEGER
+	,level INTEGER
+	,text TEXT
+	,state INTEGER
+);
 HEREDOC;
 ///////////////////////////////////////////////////////////////}}}//
 		$return = Data::exec($sql);
 		if(!$return) {
-			trigger_error("Can't delete past results", E_USER_WARNING);
+			trigger_error("Can't create 'query' table", E_USER_WARNING);
 			return(false);
 		}
 		
-		foreach($data["query"]["results"] as $result) {
-			$data = [
-				'query_id' => $query_id,
-				'url' => $result["url"],
-				'title' => $result["title"],
-				'description' => $result["description"],
-			];
-			$return = Data::insert_item(TABLES["/duckduckgo/results"], $data);
-			if(!$return) {
-				trigger_error("Can't insert 'result' into database", E_USER_WARNING);
-				return(false);
-			}
+		$table = $this->TABLE["result"];
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+CREATE TABLE IF NOT EXISTS '{$table}' (
+	id INTEGER PRIMARY KEY
+	,query INTEGER
+	,url TEXT
+	,title TEXT
+	,description TEXT
+);
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$return = Data::exec($sql);
+		if(!$return) {
+			trigger_error("Can't create 'result' table", E_USER_WARNING);
+			return(false);
 		}
 		
-		$return = Data::update_item(TABLES["/duckduckgo/queries"], ["state" => 1], $query_id);
+		return(true);
+	
+	}//}}}//
+	
+	function drop_tables()
+	{//{{{//
+		
+		$table = $this->TABLE["query"];
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+DROP TABLE IF EXISTS '{$table}';
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$return = Data::exec($sql);
 		if(!$return) {
-			trigger_error("Can't update 'state' for 'query'", E_USER_WARNING);
+			trigger_error("Can't drop 'query' table", E_USER_WARNING);
+			return(false);
+		}
+		
+		$table = $this->TABLE["result"];
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+DROP TABLE IF EXISTS '{$table}';
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$return = Data::exec($sql);
+		if(!$return) {
+			trigger_error("Can't drop 'result' table", E_USER_WARNING);
+			return(false);
+		}
+		
+		return(true);
+	
+	}//}}}//
+	
+	function select_query_by_text(string $text)
+	{//{{{//
+		
+		$text = base64_encode($text);
+		
+		$table = $this->TABLE["query"];
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+SELECT * FROM '{$table}' WHERE text='{$text}' LIMIT 1;
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$query = Data::query($sql);
+		if(!is_array($query)) {
+			trigger_error("Can't perform select query", E_USER_WARNING);
+			return(false);
+		}
+		
+		if(count($query) == 0) return(NULL);
+		
+		$R = $query[0];
+		$R["text"] = base64_decode($R["text"]);
+		
+		return($R);
+		
+	}//}}}//
+
+	function select_query_by_state(int $state)
+	{//{{{//
+		
+		$table = $this->TABLE["query"];
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+SELECT * FROM '{$table}' WHERE state={$state} LIMIT 1;
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$r = Data::query($sql);
+		if(!is_array($r)) {
+			trigger_error("Can't perform select query", E_USER_WARNING);
+			return(false);
+		}
+		
+		if(count($r) == 0) return(NULL);
+		
+		$R = $r[0];
+		$R["text"] = base64_decode($R["text"]);
+		
+		return($R);
+		
+	}//}}}//
+	
+	function update_query_by_id(array $query)
+	{//{{{//
+		
+		if(!eval(C::$I.='$query["id"]')) return(false);
+		$id = $query["id"];
+		
+		if(!eval(C::$I.='$query["parent"]')) return(false);
+		$parent = $query["parent"];
+		
+		if(!eval(C::$I.='$query["level"]')) return(false);
+		$level = $query["level"];
+		
+		if(!eval(C::$S.='$query["text"]')) return(false);
+		$text = $query["text"];
+		
+		if(!eval(C::$I.='$query["state"]')) return(false);
+		$state = $query["state"];
+
+		$table = $this->TABLE["query"];
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+UPDATE '{$table}' SET
+	parent={$parent}
+	,level={$level}
+	,text='{$text}'
+	,state={$state}
+ WHERE id={$id};	
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$r = Data::exec($sql);
+		if(!$r) {
+			trigger_error("Can't perform update query", E_USER_WARNING);
 			return(false);
 		}
 		
@@ -303,18 +465,271 @@ HEREDOC;
 		
 	}//}}}//
 	
-	static function get_next_query()
+	function delete_results_by_query(int $query)
 	{//{{{//
 		
-		$item = Data::select_item(TABLES["/duckduckgo/queries"], "state=0");
-		if($item === false) {
-			trigger_error("Can't get get 'query' with 'state=0'", E_USER_WARNING);
+		$table = $this->TABLE["result"];
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+DELETE FROM '{$table}' WHERE query={$query};
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$r = Data::exec($sql);
+		if(!$r) {
+			trigger_error("Can't perform delete query", E_USER_WARNING);
+			return(false);
+		}
+		return(true);
+		
+	}//}}}//
+	
+	function insert_query(array $query)
+	{//{{{//
+		
+		if(!eval(C::$I.='$query["parent"]')) return(false);
+		$parent = $query["parent"];
+		
+		if(!eval(C::$I.='$query["level"]')) return(false);
+		$level = $query["level"];
+		
+		if(!eval(C::$S.='$query["text"]')) return(false);
+		$text = base64_encode($query["text"]);
+		
+		if(!eval(C::$I.='$query["state"]')) return(false);
+		$state = strval($query["state"]);
+		
+		$table = $this->TABLE["query"];
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+INSERT INTO '{$table}' 
+	(parent, level, text, state)
+ VALUES
+	({$parent}, {$level}, '{$text}', {$state})
+ RETURNING id;
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$return = Data::query($sql);
+		if(!is_array($return)) {
+			trigger_error("Can't perform insert query", E_USER_WARNING);
+			return(false);
+		}
+		$query["id"] = $return[0]["id"];
+		
+		return($query);
+		
+	}//}}}//
+	
+	function insert_result(array $result)
+	{//{{{//
+		
+		if(!eval(C::$I.='$result["query"]')) return(false);
+		$query = strval($result["query"]);
+		
+		if(!eval(C::$S.='$result["url"]')) return(false);
+		$url = base64_encode($result["url"]);
+		
+		if(!eval(C::$S.='$result["title"]')) return(false);
+		$title = base64_encode($result["title"]);
+		
+		if(!eval(C::$S.='$result["description"]')) return(false);
+		$description = base64_encode($result["description"]);
+		
+		$table = $this->TABLE["result"];
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+INSERT INTO '{$table}' 
+	(query, url, title, description)
+ VALUES
+	({$query}, '{$url}', '{$title}', '{$description}')
+ RETURNING id;	
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$return = Data::query($sql);
+		if(!is_array($return)) {
+			trigger_error("Can't perform insert query", E_USER_WARNING);
+			return(false);
+		}
+		$result["id"] = $return[0]["id"];
+		
+		return($result);
+		
+	}//}}}//
+
+	static function get_input_data()
+	{//{{{//
+	
+		/* data scheme
+		{
+			 "query": string
+			,"queries": [ string_0 ... string_N ]
+			,"results": [
+				{
+					"url": string
+					,"title": string
+					,"description: string
+				}
+				...
+			]
+		}
+		*/
+	
+		$result = [];
+		
+		if(!isset($_POST["data"])) {
+			$_POST["data"] = file_get_contents('php://input');
+			if(!is_string($_POST["data"])) {
+				trigger_error("Can't get contents from php://input", E_USER_WARNING);
+				return(false);
+			}
+		}
+	
+		$data = Data::json_decode($_POST["data"]);
+		if(!is_array($data)) {
+			if (defined('DEBUG') && DEBUG) var_dump(['json' => $data]);
+			trigger_error("Can't decode json data into array", E_USER_WARNING);
 			return(false);
 		}
 		
-		if($item === NULL) return(NULL);
+		if(true) // $data["query"]
+		{//{{{//
 		
-		return($item["text"]);
+			if(!isset($data["query"])) {
+				trigger_error('$data["query"] is not set', E_USER_WARNING);
+				return(false);
+			}
+			if(!is_string($data["query"])) {
+				trigger_error('$data["query"] is not string', E_USER_WARNING);
+				return(false);
+			}
+			$result["query"] = $data["query"];
+			
+		}//}}}//
+		
+		if(true) // $data["queries"]
+		{//{{{//
+		
+			if(!isset($data["queries"])) {
+				trigger_error('$data["queries"] is not set', E_USER_WARNING);
+				return(false);
+			}
+			if(!is_array($data["queries"])) {
+				trigger_error('$data["queries"] is not array', E_USER_WARNING);
+				return(false);
+			}
+			$result["queries"] = [];
+			foreach($data["queries"] as $item) {
+				if(!is_string($item)) {
+					trigger_error('$data["queries"] item is not string', E_USER_WARNING);
+					return(false);
+				}
+				array_push($result["queries"], $item);
+			}
+			
+		}//}}}//
+		
+		if(true) // $data["results"]
+		{//{{{//
+			
+			if(!isset($data["results"])) {
+				trigger_error('$data["results"] is not set', E_USER_WARNING);
+				return(false);
+			}
+			if(!is_array($data["results"])) {
+				trigger_error('$data["results"] is not array', E_USER_WARNING);
+				return(false);
+			}
+			$result["results"] = [];
+			
+			foreach($data["results"] as $item) {
+				if(!is_array($item)) {
+					trigger_error('$data["results"] item is not array', E_USER_WARNING);
+					return(false);
+				}
+				
+				if(!isset($item["url"])) {
+					trigger_error('$item["url"] of $data["results"] is not set', E_USER_WARNING);
+					return(false);
+				}
+				if(!is_string($item["url"])) {
+					trigger_error('$item["url"] of $data["results"] is not string', E_USER_WARNING);
+					return(false);
+				}
+				
+				if(!isset($item["title"])) {
+					trigger_error('$item["title"] of $data["results"] is not set', E_USER_WARNING);
+					return(false);
+				}
+				if(!is_string($item["title"])) {
+					trigger_error('$item["title"] of $data["results"] is not string', E_USER_WARNING);
+					return(false);
+				}
+				
+				if(!isset($item["description"])) {
+					trigger_error('$item["description"] of $data["results"] is not set', E_USER_WARNING);
+					return(false);
+				}
+				if(!is_string($item["description"])) {
+					trigger_error('$item["description"] of $data["results"] is not string', E_USER_WARNING);
+					return(false);
+				}
+				
+				array_push($result["results"], [
+					"url" => $item["url"],
+					"title" => $item["title"],
+					"description" => $item["description"],
+				]);
+			}
+			
+		}//}}}//
+		
+		return($result);
+		
+	}//}}}//
+
+	static function put_query(string $query, int $parent_id, int $level)
+	{//{{{//
+		
+		$table = self::$TABLE["queries"];
+		$query = base64_encode($query);
+		
+		begin_label:
+		
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+SELECT * FROM '{$table}' WHERE query='{$query}';
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$result = Data::query($sql);
+		if(!is_array($result)) {
+			trigger_error("Can't perform database query - 'select from queries'", E_USER_WARNING);
+			return(false);
+		}
+		
+		if(count($result) > 0) {
+			$result = $result[0];
+			return($result);
+		}
+		
+		$state = 0;
+		$level = 0;
+		
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+INSERT INTO '{$table}' (query, state, level) VALUES ('{$query}', {$state}, {$level});
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$return = Data::exec($sql);
+		if(!$return) {
+			trigger_error("Can't perform database query - 'insert into queries'", E_USER_WARNING);
+			return(false);
+		}
+		
+		goto begin_label;
 		
 	}//}}}//
 }

@@ -1,90 +1,49 @@
 <?php // network.proxy.no_proxies_on = 127.0.0.1:8080
 
-// config
-$config_dir = getenv('CONFIG_DIR', true);
-if(!is_string($config_dir)) {
-	trigger_error("Environment variable 'CONFIG_DIR' is not set", E_USER_ERROR);
-	exit(255);
-}
-$config_file = realpath("{$config_dir}/config.php");
-if(!is_string($config_file)) {
-	trigger_error("Can't get real path for 'config_file'", E_USER_ERROR);
-	exit(255);
-}
-require_once($config_file);
+define('VENDOR', 'ckpunmkug');
+define('PROJECT', 'browser');
 
-$include_path = realpath(__DIR__.'/../include');
-if(!is_string($include_path)) {
-	trigger_error("Can't get real path for 'include_path'", E_USER_ERROR);
-	exit(255);
-}
-set_include_path($include_path);
+// load config
+if(true) {//{{{
 
-require_once('class/Initialization.php');
-$Initialization = new Initialization();
-
-$cache_dir = getenv('CACHE_DIR', true);
-if(!is_string($cache_dir)) {
-	trigger_error("Environment variable 'CONFIG_DIR' is not set", E_USER_ERROR);
-	exit(255);
-}
-$data_file = "{$cache_dir}/data.sqlite";
-
-require_once('class/Data.php');
-$return = Data::open($data_file);
-if(!$return) {
-	trigger_error("Can't open sqlite database file", E_USER_ERROR);
-	exit(255);
-}
-
-require_once('class/Main.php');
-
-if(!true) // TECTbl
-{//{{{//
-	
-	$_SERVER["REQUEST_METHOD"] = 'POST';
-	
-	if(true) // duckduckgo
-	{//{{{//
-		
-		$_POST['component'] = 'duckduckgo';
-		
-		if(!true) {
-			$_POST['action'] = 'add_results';
-			$_POST['data'] = 
-///////////////////////////////////////////////////////////////{{{//
-<<<HEREDOC
-{
-	"queries": [
-		"abcd"
-		,"qwerty"
-	]
-	,"query": {
-		"text": "qwerty"
-		,"results": [
-			{
-				"url": "xxx"
-				,"title": "yyy"
-				,"description": "zzz"
-			}
-			,{
-				"url": "XXX"
-				,"title": "YYY"
-				,"description": "ZZZ"
-			}
-		]
+	$return = getenv('HOME', true);
+	if(!is_string($return)) {
+		trigger_error("Environment variable 'HOME' is not set", E_USER_ERROR);
+		exit(255);
 	}
-}
-HEREDOC;
-///////////////////////////////////////////////////////////////}}}//
-		}
-		
-		if(true) {
-			$_POST['action'] = 'get_next_query';
-		}
-		
-	}//}}}//
+	define('HOME', $return);
 	
-}//}}}//
+	$string = HOME.'/.config/'.VENDOR.'/'.PROJECT.'/config.php';
+	require($string);
+	
+	if(!defined('CONFIG')) {
+		trigger_error("Constant 'CONFIG' not defined in config file", E_USER_ERROR);
+		exit(255);
+	}
+	
+}//}}}
+
+// basic includes
+if(true) {//{{{
+
+	set_include_path(__DIR__.'/../include');
+	require_once('class/C.php');
+	require_once('class/Args.php');
+	
+	require_once('class/Initialization.php');
+	$Initialization = new Initialization();
+
+	require_once('class/Data.php');
+	$data_file = HOME."/.cache/".VENDOR."/".PROJECT."/data.sqlite";
+	$return = Data::open($data_file);
+	if(!$return) {
+		trigger_error("Can't open sqlite database file", E_USER_ERROR);
+		exit(255);
+	}
+
+	require_once('class/Main.php');
+
+}//}}}
 
 $Main = new Main();
+

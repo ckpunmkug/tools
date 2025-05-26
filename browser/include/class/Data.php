@@ -1,64 +1,17 @@
 <?php
 
+/*
+id INTEGER PRIMARY KEY
+string TEXT
+int INTEGER
+float REAL
+*/
+
+
 class Data
 {
-	static function get_bool($variable = NULL)
-	{//{{{//
-		
-		if($variable === NULL) {
-			return(NULL);
-		}
-		
-		$result = boolval($variable);
-		return($result);
-		
-	}//}}}//
-	static function get_int($variable = NULL)
-	{//{{{//
-		
-		if($variable === NULL) {
-			return(NULL);
-		}
-		
-		$result = intval($variable);
-		return($result);
-		
-	}//}}}//
-	static function get_float($variable = NULL)
-	{//{{{//
-		
-		if($variable === NULL) {
-			return(NULL);
-		}
-		
-		$result = floatval($variable);
-		return($result);
-		
-	}//}}}//
-	static function get_string($variable = NULL)
-	{//{{{//
-		
-		if($variable === NULL || is_string($variable) == false) {
-			return(NULL);
-		}
-		
-		$result = $variable;
-		return($result);
-		
-	}//}}}//
-	static function get_array($variable = NULL)
-	{//{{{//
-		
-		if($variable === NULL || is_array($variable) == false) {
-			return(NULL);
-		}
-		
-		$result = $variable;
-		return($result); 
-		
-	}//}}}//
 
-	static function encode($variable)
+	static function json_encode($variable)
 	{//{{{//
 		
 		$json = json_encode($variable, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
@@ -70,7 +23,7 @@ class Data
 		return($json);
 		
 	}//}}}//
-	static function decode(string $json)
+	static function json_decode(string $json)
 	{//{{{//
 	
 		$variable = json_decode($json, true);
@@ -81,84 +34,6 @@ class Data
 			return(NULL);
 		}
 		return($variable);
-		
-	}//}}}//
-	static function export(string $filename, $variable)
-	{//{{{//
-	
-		$contents = self::encode($variable);
-		if(!is_string($contents)) {
-			trigger_error("Can't encode variable to json", E_USER_WARNING);
-			return(false);
-		}
-		
-		$return = file_put_contents($filename, $contents);
-		if(!is_int($return)) {
-			trigger_error("Can't put json contents to file", E_USER_WARNING);
-			return(false);
-		}
-		
-		return(true);
-		
-	}//}}}//	
-	static function import(string $filename)
-	{//{{{//
-		
-		$contents = file_get_contents($filename);
-		if(!is_string($contents)) {
-			trigger_error("Can't get json contents from file", E_USER_WARNING);
-			return(false);
-		}
-		
-		$variable = self::decode($contents);
-		if($variable === NULL) {
-			trigger_error("Can't decode json contents", E_USER_WARNING);
-			return(false);
-		}
-		
-		return($variable);
-		
-	}//}}}//
-	static function save(string $filename, array $array)
-	{//{{{//
-		
-		$contents = '';
-		foreach($array as $string) {
-			$string = self::get_string($string);
-			if(!empty($contents)) $contents .= "\n";
-			$contents .= "{$string}";
-		}
-		
-		$return = file_put_contents($filename, $contents);
-		if(!is_int($return)) {
-			trigger_error("Can't put merged contents to file", E_USER_WARNING);
-			return(false);
-		}
-		
-		return(true);
-		
-	}//}}}//
-	static function load(string $filename)
-	{//{{{//
-		
-		$contents = file_get_contents($filename);
-		if(!is_string($contents)) {
-			trigger_error("Can't get merged contents from file", E_USER_WARNING);
-			return(false);
-		}
-		
-		$array = explode("\n", $contents);
-		
-		$result = [];
-		foreach($array as $string) {
-			$string = trim($string);
-			$strlen = strlen($string);
-			if($strlen > 0) {
-				array_push($result, $string);
-			}
-		}
-		
-		return($result);
 		
 	}//}}}//
 	
@@ -225,6 +100,7 @@ class Data
 		
 		$SQLite3Result = self::$SQLite3->query($query);
 		if(!is_object($SQLite3Result)){
+			if (defined('DEBUG') && DEBUG) var_dump(['sql query' => $query]);
 			trigger_error("Query SQLite3 failed", E_USER_WARNING);
 			return(false);
 		}
@@ -243,67 +119,41 @@ class Data
 	
 	/// Escape or prepare data for use in sql query
 	
-	static function table(string $string)
+	static function check_table_name(string $string)
 	{//{{{//
 		
-		if(!is_object(self::$SQLite3)) {
-			trigger_error("SQLite database is not open", E_USER_WARNING);
+		$pattern = '/^[_a-zA-Z0-9\/]+$/';
+		$return = preg_match($pattern, $string);
+		if($return != 1) {
+			if (defined('DEBUG') && DEBUG) var_dump(['table name' => $string]);
+			trigger_error("Table name contains invalid characters", E_USER_WARNING);
 			return(false);
 		}
-		
-		$pattern = '([^\x20-\xFF])';
-		$string = preg_replace($pattern, '', $string);
-		
-		$string = self::$SQLite3->escapeString($string);
-		
-		return($string);
+		return(true);
 		
 	}//}}}//
-	static function column(string $string)
+	static function check_column_name(string $string)
 	{//{{{//
 		
-		if(!is_object(self::$SQLite3)) {
-			trigger_error("SQLite database is not open", E_USER_WARNING);
+		$pattern = '/^[_a-zA-Z0-9]+$/';
+		$return = preg_match($pattern, $string);
+		if($return != 1) {
+			if (defined('DEBUG') && DEBUG) var_dump(['table name' => $string]);
+			trigger_error("Column name contains invalid characters", E_USER_WARNING);
 			return(false);
 		}
-		
-		$pattern = '([^\_a-zA-Z0-9])';
-		$string = preg_replace($pattern, '', $string);
-		
-		$string = self::$SQLite3->escapeString($string);
-		
-		return($string);
+		return(true);
 		
 	}//}}}//
 	static function text(string $string)
 	{//{{{//
 		
-		if(!is_object(self::$SQLite3)) {
-			trigger_error("SQLite database is not open", E_USER_WARNING);
-			return(false);
-		}
-		
-		$pattern = '([^\x09\x0D\x0A\x20-\xFF])';
-		$string = preg_replace($pattern, '', $string);
-		
-		$pattern = '([\'])';
-		$string = preg_replace($pattern, "'||char(39)||'", $string);
-		
-		$pattern = '([\\\\])';
-		$string = preg_replace($pattern, "'||char(92)||'", $string);
-		
-		//$string = self::$SQLite3->escapeString($string);
-		
+		$string = base64_encode($string);
 		return($string);
 		
 	}//}}}//
 	static function integer($number)
 	{//{{{//
-		
-		if(!is_object(self::$SQLite3)) {
-			trigger_error("SQLite database is not open", E_USER_WARNING);
-			return(false);
-		}
 		
 		$number = intval($number);
 		$number = strval($number);
@@ -313,11 +163,6 @@ class Data
 	}//}}}//
 	static function real($number)
 	{//{{{//
-		
-		if(!is_object(self::$SQLite3)) {
-			trigger_error("SQLite database is not open", E_USER_WARNING);
-			return(false);
-		}
 		
 		$number = floatval($number);
 		$number = strval($number);
@@ -329,13 +174,16 @@ class Data
 	static function table_exists(string $table)
 	{//{{{//
 		
-		$_ = [
-			'table' => self::table($table),
-		];
+		$return = self::check_table_name($table);
+		if(!$return) {
+			trigger_error("Incorrect table name", E_USER_WARNING);
+			return(false);
+		}
+		
 		$sql = 
 ///////////////////////////////////////////////////////////////{{{//
 <<<HEREDOC
-SELECT name FROM sqlite_master WHERE type='table' AND name='{$_["table"]}';
+SELECT name FROM sqlite_master WHERE type='table' AND name='{$table}';
 HEREDOC;
 ///////////////////////////////////////////////////////////////}}}//		
 		$return = self::query($sql);
@@ -352,86 +200,83 @@ HEREDOC;
 		return(false);
 		
 	}//}}}//
-	static function create_table(string $table, array $columns, bool $id = true) // bool
+	static function create_table(string $table, array $COLUMN, bool $add_auto_increment_id = false) // bool
 	{//{{{// 
 	
 		// Usage
 		/* {{{
-		$table = '/test';
-		$columns = ['
-			// columns without default values
-			'text0' => '', // strval(false)
-			'integer0' => 0, // intval(false)
-			'real0' => 0.0,
-			// columns with zero default value
-			'text1' => '1', // strval(true)
-			'integer1' => 1, // intval(true)
-			'real1' => 1.0, // floatval(true)
-		];
-		$return = Data::create_table($table, $columns);
-		if($return === false) return(!user_error('Returned FALSE'));
 		
-DROP TABLE IF EXISTS '/test';
-CREATE TABLE '/test' (
-        id INTEGER PRIMARY KEY,
-        text0 TEXT,
-        integer0 INTEGER,
-        real0 REAL,
-        text1 TEXT DEFAULT '',
-        integer1 INTEGER DEFAULT 0,
-        real1 REAL DEFAULT 0.0
-);
+		$table = '/test';
+		$COLUMN = ['
+			// columns with default zero value
+			'text0' => '',
+			'integer0' => 0,
+			'real0' => 0.0,
+			// columns without default value
+			'text1' => '1',
+			'integer1' => 1,
+			'real1' => 1.0,
+		];
+		$return = Data::create_table($table, $COLUMN, true);
+		
 		 }}} */
 		
-		$_ = [];
-		$sql = '';
-		
-		if($id) {
-			$_["columns"] = "\n\tid INTEGER PRIMARY KEY";
-		}
-		else {
-			$_["columns"] = "";
+		$return = self::check_table_name($table);
+		if(!$return) {
+			trigger_error("Incorrect table name", E_USER_WARNING);
+			return(false);
 		}
 		
-		foreach($columns as $column => $value) {//
+		$columns = '';
+		if($add_auto_increment_id && !key_exists('id', $COLUMN)) {
+			$columns = "id INTEGER PRIMARY KEY";
+		}
+		
+		foreach($COLUMN as $column => $value) {
 			
-			if(strlen($_["columns"]) > 0) {
-				$_["columns"] .= ',';
+			$return = self::check_column_name($column);
+			if(!$return) {
+				trigger_error("Incorrect column name", E_USER_WARNING);
+				return(false);
 			}
 			
-			$_["column"] = Data::column($column);
+			if(strlen($columns) > 0) $columns .= ', ';
 			
 			$type = gettype($value);
-			switch($type) {//
+			switch($type) {
+			
 				case('integer'):
-					$_["columns"] .= "\n\t{$_['column']} INTEGER";
-					if(boolval($value)) $_["columns"] .= ' DEFAULT 0';
+					$columns .= "{$column} INTEGER";
+					if($value === 0) $columns .= ' DEFAULT 0';
 					break;
+					
 				case('double'):
-					$_["columns"] .= "\n\t{$_['column']} REAL";
-					if(boolval($value)) $_["columns"] .= ' DEFAULT 0.0';
+					$columns .= "{$column} REAL";
+					if($value === 0.0) $columns .= ' DEFAULT 0.0';
 					break;
+					
 				case('string'):
-					$_["columns"] .= "\n\t{$_['column']} TEXT";
-					if(boolval($value)) $_["columns"] .= " DEFAULT ''";
+					$columns .= "{$column} TEXT";
+					if($value === '') $columns .= " DEFAULT ''";
 					break;
+					
 				default:
 					if (defined('DEBUG') && DEBUG) var_dump(['$type' => $type]);
 					trigger_error("Unsupported column value type", E_USER_WARNING);
 					return(false);
-			}// switch($type)
+					
+			} //switch($type)
 			
-		}// foreach($columns as $column => $value)
-		$_["columns"] .= "\n";
+		} //foreach($columns as $column => $value)
 		
-		$_["table"] = self::table($table);
-		$sql .= 
+		$sql = 
 ///////////////////////////////////////////////////////////////
 <<<HEREDOC
-DROP TABLE IF EXISTS '{$_["table"]}';
-CREATE TABLE '{$_["table"]}' ({$_["columns"]});
+DROP TABLE IF EXISTS '{$table}';
+CREATE TABLE '{$table}' ({$columns});
 HEREDOC;
 ///////////////////////////////////////////////////////////////
+		if(defined('TESTING')) var_dump($sql);
 		
 		$return = self::exec($sql);
 		if(!$return) {
@@ -442,96 +287,62 @@ HEREDOC;
 		return(true);
 		
 	}//}}}//
-	static function select_item(string $table, string $where = '', int $offset = 0) // array
-	{//{{{//
-	
-		$sql = '';
-		$_ = [
-			"table" => self::table($table),
-		];
-		
-		$sql .= 
-///////////////////////////////////////////////////////////////{{{//
-<<<HEREDOC
-SELECT * FROM '{$_["table"]}'
-HEREDOC;
-///////////////////////////////////////////////////////////////}}}//
-		
-		$strlen = strlen($where);
-		if($strlen > 0) {
-			$sql .= "\n\tWHERE {$where}";
-		}
-		
-		$sql .= "\n\tLIMIT 1";
-		
-		$_["offset"] = self::integer($offset);
-		$sql .= "\n\tOFFSET {$_["offset"]}";
-		
-		$sql .= ';';
-		
-		$return = self::query($sql);
-		if(!is_array($return)) {
-			trigger_error("Can't perform select query", E_USER_WARNING);
-			return(false);
-		}
-		$result = $return;
-		
-		if(count($result) == 0) {
-			return(NULL);
-		}
-		
-		return($result[0]);
-		
-	}//}}}//
 	static function insert_item(string $table, array $data)
 	{//{{{//
 	
-		$sql = '';
-		$_ = [
-			"table" => self::table($table),
-		];
+		$return = self::check_table_name($table);
+		if(!$return) {
+			trigger_error("Incorrect table name", E_USER_WARNING);
+			return(false);
+		}
 		
-		$sql .= 
+		$sql = 
 ///////////////////////////////////////////////////////////////{{{//
 <<<HEREDOC
-INSERT INTO '{$_["table"]}'
+INSERT INTO '{$table}'
 HEREDOC;
 ///////////////////////////////////////////////////////////////}}}//
 		
 		$columns = '';
 		$values = '';
-		foreach($data as $column => $value) {//
+		foreach($data as $column => $value) {
 			
-			if(strlen($columns) !== 0) {
-				$columns .= ', ';
+			if(strlen($columns) > 0) $columns .= ', ';
+			if(strlen($values) > 0) $values .= ', ';
+					
+			$return = self::check_column_name($column);
+			if(!$return) {
+				trigger_error("Incorrect column name", E_USER_WARNING);
+				return(false);
 			}
-			if(strlen($values) !== 0) {
-				$values .= ', ';
-			}
-			
-			$_["column"] = Data::column($column);
-			$columns .= $_["column"];
+			$columns .= $column;
 			
 			$type = gettype($value);
-			switch($type) {//
+			switch($type) {
+			
 				case('integer'):
 					$values .= self::integer($value);
 					break;
+					
 				case('double'):
 					$values .= self::real($value);
 					break;
+					
 				case('string'):
 					$values .= "'".self::text($value)."'";
 					break;
+					
 				default:
 					if (defined('DEBUG') && DEBUG) var_dump(['$type' => $type]);
 					trigger_error("Unsupported value type", E_USER_WARNING);
 					return(false);
-			}// switch($type)
-		}// foreach($where as $column => $value)
+					
+			} //switch($type)
+		} //foreach($where as $column => $value)
 		
-		$sql .= " (\n\t{$columns}\n) VALUES (\n\t{$values}\n);";
-		
+		$sql .= " ({$columns}) VALUES ({$values});";
+		if(defined('TESTING')) var_dump($sql);
+	
 		$return = self::exec($sql);
 		if(!$return) {
 			trigger_error("Can't perform database insert query", E_USER_WARNING);
@@ -544,53 +355,62 @@ HEREDOC;
 	static function update_item(string $table, array $data, int $id)
 	{//{{{//
 	
-		$sql = '';
-		$_ = [
-			"table" => self::table($table),
-		];
+		$return = self::check_table_name($table);
+		if(!$return) {
+			trigger_error("Incorrect table name", E_USER_WARNING);
+			return(false);
+		}
 		
-		$sql .= 
+		$sql = 
 ///////////////////////////////////////////////////////////////{{{//
 <<<HEREDOC
-UPDATE '{$_["table"]}' SET
+UPDATE '{$table}' SET 
 HEREDOC;
 ///////////////////////////////////////////////////////////////}}}//
 		
 		$string = '';
-		foreach($data as $column => $value) {//
+		foreach($data as $column => $value) {
+		
 			$strlen = strlen($string);
-			if($strlen > 0) {
-				$string .= ',';
-			}
-			$string .= "\n\t";
+			if($strlen > 0) $string .= ', ';
 			
-			$_["column"] = Data::column($column);
-			$string .= $_["column"].'=';
+			$return = self::check_column_name($column);
+			if(!$return) {
+				trigger_error("Incorrect column name", E_USER_WARNING);
+				return(false);
+			}
+			$string .= "{$column}=";
 			
 			$type = gettype($value);
-			switch($type) {//
+			switch($type) {
+			
 				case('integer'):
 					$string .= self::integer($value);
 					break;
+					
 				case('double'):
 					$string .= self::real($value);
 					break;
+					
 				case('string'):
 					$string .= "'".self::text($value)."'";
 					break;
+					
 				default:
 					if (defined('DEBUG') && DEBUG) var_dump(['$type' => $type]);
 					trigger_error("Unsupported value type", E_USER_WARNING);
 					return(false);
-			}// switch($type)
-		}// foreach($where as $column => $value)
+					
+			} //switch($type)
+		} //foreach($where as $column => $value)
 		
 		$sql .= $string;
 		
-		$_["id"] = self::integer($id);
-		$sql .= "\n\tWHERE id={$_['id']}";
+		$id = self::integer($id);
+		$sql .= " WHERE id={$id}";
 		
 		$sql .= ';';
+		if(defined('TESTING')) var_dump($sql);
 		
 		$return = self::exec($sql);
 		if(!$return) {
@@ -601,27 +421,158 @@ HEREDOC;
 		return(true);
 		
 	}//}}}//
-	static function select_count(string $table, string $where = '')
+	static function select_item(string $table, string $where = '', int $offset = 0) // array
 	{//{{{//
-	
-		$_ = [];
-		$sql = '';
 		
-		$_["table"] = self::table($table);
-		$sql .=
+		$return = self::check_table_name($table);
+		if(!$return) {
+			trigger_error("Incorrect table name", E_USER_WARNING);
+			return(false);
+		}
+		
+		$sql = 
 ///////////////////////////////////////////////////////////////{{{//
 <<<HEREDOC
-SELECT COUNT(*) FROM '{$_["table"]}'
+SELECT * FROM '{$table}'
 HEREDOC;
 ///////////////////////////////////////////////////////////////}}}//
 		
 		$strlen = strlen($where);
-		if($strlen > 0) {
-			$sql .= "\n\tWHERE {$where};";
+		if($strlen > 0) $sql .= " WHERE {$where}";
+		
+		$sql .= " LIMIT 1";
+		
+		$offset = self::integer($offset);
+		$sql .= " OFFSET {$offset}";
+		
+		$sql .= ';';
+		if(defined('TESTING')) var_dump($sql);
+		
+		$return = self::query($sql);
+		if(!is_array($return)) {
+			trigger_error("Can't perform select query", E_USER_WARNING);
+			return(false);
 		}
-		else {
-			$sql .= ';';
+		$result = $return;
+		
+		if(count($result) == 0) {
+			return(NULL);
 		}
+		$result = $result[0];
+		
+		foreach($result as $i => $column) {
+				if(is_string($column)) $result[$i] = base64_decode($column);
+		}
+	
+		return($result);
+		
+	}//}}}//
+	static function select_items(string $table, array $COLUMN = [], string $where = '')
+	{//{{{//
+			
+		$return = self::check_table_name($table);
+		if(!$return) {
+			trigger_error("Incorrect table name", E_USER_WARNING);
+			return(false);
+		}
+		
+		$return = count($COLUMN);
+		if($return > 0) $columns = '';
+		else $columns = '*';
+
+		foreach($COLUMN as $column) {
+					
+			$return = self::check_column_name($column);
+			if(!$return) {
+				trigger_error("Incorrect column name", E_USER_WARNING);
+				return(false);
+			}
+			
+			if(strlen($columns) > 0) $columns .= ', ';
+			
+			$columns .= $column;
+		}
+		
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+SELECT $columns FROM '{$table}'
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+	
+		$return = strlen($where);
+		if($return > 0) $sql .= " WHERE {$where}";
+		
+		$sql .= ';';
+		if(defined('TESTING')) var_dump($sql);
+	
+		$result = Data::query($sql);
+		if(!is_array($result)) {
+			trigger_error("Can't perform select items query", E_USER_WARNING);
+			return(false);
+		}
+		
+		foreach($result as $i => $item) {
+			foreach($item as $j => $column) {
+				if(is_string($column)) $result[$i][$j] = base64_decode($column);
+			}
+		}
+	
+		return($result);
+		
+	}//}}}//
+	static function delete_items(string $table, string $where = '1')
+	{//{{{//
+			
+		$return = self::check_table_name($table);
+		if(!$return) {
+			trigger_error("Incorrect table name", E_USER_WARNING);
+			return(false);
+		}
+		
+		$sql = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+DELETE FROM '{$table}'
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+	
+		$return = strlen($where);
+		if($return > 0) $sql .= " WHERE {$where}";
+		
+		$sql .= ';';
+		if(defined('TESTING')) var_dump($sql);
+	
+		$result = Data::exec($sql);
+		if(!$result) {
+			trigger_error("Can't perform delete items query", E_USER_WARNING);
+			return(false);
+		}
+	
+		return($result);
+		
+	}//}}}//
+	static function select_count(string $table, string $where = '')
+	{//{{{//
+	
+		$return = self::check_table_name($table);
+		if(!$return) {
+			trigger_error("Incorrect table name", E_USER_WARNING);
+			return(false);
+		}
+		
+		$sql =
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+SELECT COUNT(*) FROM '{$table}'
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		
+		$strlen = strlen($where);
+		if($strlen > 0) $sql .= " WHERE {$where}";
+		
+		$sql .= ';';
+		if(defined('TESTING')) var_dump($sql);
 		
 		$return = self::query($sql);
 		if(!is_array($return)) {
@@ -633,5 +584,6 @@ HEREDOC;
 		return($result);
 		
 	}//}}}//
+
 }
 

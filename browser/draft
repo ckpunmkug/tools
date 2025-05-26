@@ -1,7 +1,79 @@
-if(typeof(VERBOSE) == 'boolean' && VERBOSE === true) {
-	console.log("");
-}
-if(typeof(VERBOSE) == 'boolean' && VERBOSE === true) {
-	console.log("");}
-}
+	static function export(string $filename, $variable)
+	{//{{{//
+	
+		$contents = self::encode($variable);
+		if(!is_string($contents)) {
+			trigger_error("Can't encode variable to json", E_USER_WARNING);
+			return(false);
+		}
+		
+		$return = file_put_contents($filename, $contents);
+		if(!is_int($return)) {
+			trigger_error("Can't put json contents to file", E_USER_WARNING);
+			return(false);
+		}
+		
+		return(true);
+		
+	}//}}}//	
+	static function import(string $filename)
+	{//{{{//
+		
+		$contents = file_get_contents($filename);
+		if(!is_string($contents)) {
+			trigger_error("Can't get json contents from file", E_USER_WARNING);
+			return(false);
+		}
+		
+		$variable = self::decode($contents);
+		if($variable === NULL) {
+			trigger_error("Can't decode json contents", E_USER_WARNING);
+			return(false);
+		}
+		
+		return($variable);
+		
+	}//}}}//
+	static function save(string $filename, array $array)
+	{//{{{//
+		
+		$contents = '';
+		foreach($array as $string) {
+			$string = self::get_string($string);
+			if(!empty($contents)) $contents .= "\n";
+			$contents .= "{$string}";
+		}
+		
+		$return = file_put_contents($filename, $contents);
+		if(!is_int($return)) {
+			trigger_error("Can't put merged contents to file", E_USER_WARNING);
+			return(false);
+		}
+		
+		return(true);
+		
+	}//}}}//
+	static function load(string $filename)
+	{//{{{//
+		
+		$contents = file_get_contents($filename);
+		if(!is_string($contents)) {
+			trigger_error("Can't get merged contents from file", E_USER_WARNING);
+			return(false);
+		}
+		
+		$array = explode("\n", $contents);
+		
+		$result = [];
+		foreach($array as $string) {
+			$string = trim($string);
+			$strlen = strlen($string);
+			if($strlen > 0) {
+				array_push($result, $string);
+			}
+		}
+		
+		return($result);
+		
+	}//}}}//
 
