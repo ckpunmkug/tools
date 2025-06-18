@@ -1,7 +1,9 @@
+#!/usr/bin/php
 <?php
 
 function launch(string $command, int $timeout) // array
-{
+{//{{{//
+	
 	$timeout *= 1000000;
 	
 	$std = [
@@ -76,5 +78,6 @@ function launch(string $command, int $timeout) // array
 	proc_close($proc);
 	
 	return($result);
-}
+	
+}//}}}//
 

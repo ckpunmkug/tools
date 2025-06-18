@@ -33,5 +33,5 @@ fi
 export TZ='Europe/Moscow'
 DATE=`/usr/bin/date "+%g.%m.%d-%H:%M"`
 /usr/bin/wget -O "${1}/${DATE}.mp3" https://silverrain.hostingradio.ru/silver128.mp3 &
-sleep 3600
+sleep 3555
 /usr/bin/killall -SIGTERM wget

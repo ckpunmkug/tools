@@ -1,0 +1,46 @@
+#!/usr/bin/perl
+
+use JSON;
+
+# About VNC
+=pod
+{{{
+	
+	Install the required packages.
+apt install tightvncserver xtightvncviewer libnet-vnc-perl libjson-perl
+
+	Set passwords for the VNC server.
+vncpasswd
+
+	Start the VNC server.
+vncserver -localhost
+
+	Stop the VNC server.
+vncserver -kill localhost:1
+
+	Configure VNC server.
+cd ~/.vnc/
+cp xstartup xstartup.orig
+vim xstartup
+
+> diff ./xstartup.orig ./xstartup
+8,9c8,12
+< export XKL_XMODMAP_DISABLE=1
+< /etc/X11/Xsession
+---
+> #export XKL_XMODMAP_DISABLE=1
+> #/etc/X11/Xsession
+> 
+> /usr/local/lib/tor-browser/Browser/start-tor-browser
+> 
+
+tightvncserver -localhost -nolisten tcp -geometry 1200x800
+
+}}}
+=cut
+
+my $json = <STDIN>;
+my $content = decode_json($json);
+my $string = $content->{'xxx'};
+print "You entered $string as a String";
+

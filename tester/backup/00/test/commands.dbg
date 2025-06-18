@@ -1,0 +1,5 @@
+ev $argv = [$argv[0],'abcd','xyz']; $argc = count($argv);
+
+# Comment
+run
+quit

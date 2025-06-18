@@ -1,0 +1,21 @@
+#!/usr/bin/php
+<?php
+
+define('CONFIG', [
+	"sh" => [
+		"debugger" => '/usr/local/src/tools/tester/cli/debugger',
+		"commands" => '/usr/local/src/tools/browser/test/commands.lst',
+		"source" => '/usr/local/src/tools/browser/test/source.php',
+		"directory" => '/usr/local/src/tools/browser/docroot',
+	],
+]);
+
+$command = 
+	CONFIG["sh"]["debugger"]
+	.' --commands-file '.CONFIG["sh"]["commands"]
+	.' --source-file '.CONFIG["sh"]["source"]
+	.' --working-directory '.CONFIG["sh"]["directory"]
+;
+
+system($command);
+

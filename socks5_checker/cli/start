@@ -1,0 +1,167 @@
+#!/usr/bin/php
+<?php
+
+putenv('VENDOR=ckpunmkug');
+putenv('PROJECT=socks5_checker');
+
+/// set project directories ///
+//{{{
+	$realpath = realpath(__DIR__.'/..');
+	if(!is_string($realpath)) {
+		trigger_error("Can't get real path for root of project folder", E_USER_ERROR);
+		exit(255);
+	}
+	define('PROJECT_DIR', $realpath);
+	
+	set_include_path(PROJECT_DIR.'/include');
+//}}}
+
+/// get environments ///
+//{{{
+	$string = getenv('HOME');
+	if(!is_string($string)) {
+		trigger_error("Can't get 'HOME' environment", E_USER_ERROR);
+		exit(255);
+	}
+	define('HOME', $string);
+
+	$string = getenv('VENDOR');
+	if(!is_string($string)) {
+		trigger_error("Can't get 'VENDOR' environment", E_USER_ERROR);
+		exit(255);
+	}
+	define('VENDOR', $string);
+
+	$string = getenv('PROJECT');
+	if(!is_string($string)) {
+		trigger_error("Can't get 'PROJECT' environment", E_USER_ERROR);
+		exit(255);
+	}
+	define('PROJECT', $string);
+//}}}
+
+/// configure command line arguments ///
+//{{{
+	require_once('class/Args.php');
+	
+	Args::$description =
+///////////////////////////////////////////////////////////////{{{//
+<<<'HEREDOC'
+
+Default paths:
+	config - ${HOME}/.config/${VENDOR}/${PROJECT}/config.ini
+	database - ${HOME}/.cache/${VENDOR}/${PROJECT}/database.sqlite
+	share - ${HOME}/.share/${VENDOR}/${PROJECT}
+
+Framework components
+	(default)
+		Actions:
+		info - Print information about used parameters
+		
+	server - Start built-in php server with autorization
+
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+
+	Args::add([
+		NULL, "--config", "<path>", "Path to config ini file",
+		function ($string) {
+			define("CONFIG_FILE", $string);
+		}, false
+	]);
+	Args::add([
+		NULL, "--database", "<path>", "Path to database SQLite3 file",
+		function ($string) {
+			define("DATABASE_FILE", $string);
+		}, false
+	]);
+	Args::add([
+		NULL, "--share", "<path>", "Path to shared folder",
+		function ($string) {
+			define("SHARE_DIR", $string);
+		}, false
+	]);
+	Args::add([
+		"-C", "--component", "<name>", NULL,
+		function ($string) {
+			define("COMPONENT", $string);
+		}, false
+	]);
+	Args::add([
+		"-A", "--action", "<name>", NULL,
+		function ($string) {
+			define("ACTION", $string);
+		}, false
+	]);
+	Args::add([
+		"-P", "--parameter", "<string>", NULL,
+		function ($string) {
+			define("PARAMETER", $string);
+		}, false
+	]);
+	Args::add([
+		"-I", "--input", "<path>", "Path to input file",
+		function ($string) {
+			define("INPUT_FILE", $string);
+		}, false
+	]);
+	Args::add([
+		"-O", "--output", "<path>", "Path to output file",
+		function ($string) {
+			define("OUTPUT_FILE", $string);
+		}, false
+	]);
+	
+	Args::apply();
+//}}}
+
+/// define constants ////
+//{{{
+	if(!defined('CONFIG_FILE'))
+		define('CONFIG_FILE', HOME.'/.config/'.VENDOR.'/'.PROJECT.'/config.ini');
+	
+	if(!defined('DATABASE_FILE'))
+		define('DATABASE_FILE', HOME.'/.cache/'.VENDOR.'/'.PROJECT.'/database.sqlite');
+	
+	if(!defined('SHARE_DIR'))
+		define('SHARE_DIR', HOME.'/.share/'.VENDOR.'/'.PROJECT);
+		
+	if(!defined('COMPONENT'))
+		define('COMPONENT', NULL);
+		
+	if(!defined('ACTION'))
+		define('ACTION', NULL);
+//}}}
+
+switch(COMPONENT) {
+	case(NULL):
+	{//{{{//
+		
+		$config = [];
+		$action = 'single';
+		$data = '';
+		if(defined('PARAMETER')) {
+			$data = PARAMETER;
+		}
+		
+		require_once('component/socks5_checker.php');
+		$return = socks5_checker::main($config, $action, $data);
+		if(!$return) {
+			trigger_error("Main call of 'socks5_checker' returned an error", E_USER_ERROR);
+			exit(255);
+		}
+		
+		exit(0);
+		
+	}//}}}//
+	
+	default:
+	//{{{//
+	
+	if (defined('DEBUG') && DEBUG) var_dump(['component name' => COMPONENT]);
+	trigger_error("Unsupported component name", E_USER_ERROR);
+	exit(255);
+	
+	//}}}//	
+}
+

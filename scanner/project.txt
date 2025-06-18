@@ -1,0 +1,27 @@
+import domains
+
+resolve domain names
+
+	nslookup
+		domain_id
+		state
+		nslookup_ouput
+
+----
+HTTP Loading state
+0 - unaction
+1 - started
+2 - error
+3 - complete
+4 - timeout
+----
+
+parse http response header
+	get http status
+	get server
+	get location
+	get redirect count
+
+statistics
+	Total domain names.
+

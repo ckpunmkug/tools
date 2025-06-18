@@ -34,91 +34,48 @@ class Main
 	
 	function handle_post_request()
 	{//{{{
-	
-		if(!eval(C::$S.='$_GET["component"]')) return(false);
-		$component = $_GET["component"];
+		if(!(
+			eval(C::$S.='$_POST["csrf_token"]') === true
+			&& strcmp($_POST["csrf_token"], CSRF_TOKEN) === 0
+		)) {
+			if (defined('DEBUG') && DEBUG) var_dump(['$_POST["csrf_token"]' => $_POST["csrf_token"]]);
+			trigger_error("Incorrect 'csrf token' string", E_USER_WARNING);
+			return(false);
+		}
 		
-		if(!eval(C::$S.='$_GET["action"]')) return(false);
-		$action = $_GET["action"];
-		
+		if(!eval(C::$S.='$_POST["component"]')) return(false);
+		if(!eval(C::$S.='$_POST["action"]')) return(false);
 		if(!eval(C::$S.='$_POST["data"]')) return(false);
-		$data = $_POST["data"];
 		
-		switch($component) {
+		$data = base64_decode($_POST["data"], true);
+		if(!is_string($data)) {
+			if (defined('DEBUG') && DEBUG) var_dump(['$_POST["data"]' => $_POST["data"]]);
+			trigger_error("Can't decode incomig data from base64", E_USER_WARNING);
+			return(false);
+		}
+		
+		switch($_POST["component"]) {
 			case('duckduckgo'):
-				require_once('component/duckduckgo.php');
 				
+				require_once('component/duckduckgo.php');
 				if(!eval(C::$A.='CONFIG["component"]["duckduckgo"]')) {
-					trigger_error("Incorrect config for 'duckduckgo' component", E_USER_WARNING);
+					trigger_error("Incorrect 'duckduckgo' configuration array", E_USER_WARNING);
 					return(false);
 				}
-				$config = CONFIG["component"]["duckduckgo"];
-				
 				try {
-					$object = new duckduckgo($config, $action, $data);
+					$object = new duckduckgo(CONFIG["component"]["duckduckgo"], $_POST["action"], $data);
 				}
 				catch(Exception $Exception) {
 					trigger_error($Exception->getMessage(), E_USER_WARNING);
 					return(false);
 				}
-				
 				return(true);
+				
 			default:
-				if (defined('DEBUG') && DEBUG) var_dump(['$component' => $component]);
+				if (defined('DEBUG') && DEBUG) var_dump(['$_POST["component"]' => $_POST["component"]]);
 				trigger_error("Unsupported 'component'", E_USER_WARNING);
 				return(false);
 		}
-	}//}}}
-	
-	function main()
-	{//{{{
-	
-		HTML::$styles = [
-			'share/style/bootstrap.css',
-			'share/style/bootstrap-theme.css',
-		];
-	
-		HTML::$scripts = [
-			'share/script/jquery.js',
-			'share/script/bootstrap.js',
-		];
-		
-		HTML::$style .= 
-/////////////////////////////////////////////////////////////////
-<<<HEREDOC
-@font-face
-	{
-		font-family: 'hack';
-		src: url("share/font/hack.woff2");
-	}
-*
-	{
-		font-family: 'hack';
-		font-size: 16px;
-	}
-.container
-	{
-		border: solid 1px black;
-		width: 800px;
-	}
-HEREDOC;
-/////////////////////////////////////////////////////////////////
-	
-		HTML::$body .= 
-////////////////////////////////////////////////////////////////////////////////
-<<<HEREDOC
-<div class="container">
-	<form>
-		<div class="form-group">
-			<label for="input-00">URL</label>
-			<input name="url" value="http://" type="text" id="input-00" />
-		</div>
-	</form>
-</div>
-HEREDOC;
-////////////////////////////////////////////////////////////////////////////////
-
-		return(true);
 	}//}}}
 }
 

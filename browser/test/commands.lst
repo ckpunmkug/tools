@@ -1,0 +1,6 @@
+#b /usr/local/src/tools/browser/include/component/duckduckgo.php:369
+run
+#ev var_dump(self::$output["query"]);
+#continue
+quit
+

@@ -31,7 +31,8 @@ HEREDOC;
 	-I                          Ignore default .phpdbginit
 	-O      -Omy.oplog          Sets oplog output file
 	-p      -p, -p=func, -p*    Output opcodes and quit
-  
+	-S      -Scli               Override SAPI name, careful!
+
 	set prompt abcd
 	set quiet on
 	set pagination off
@@ -60,6 +61,7 @@ class PHPDebugger
 	function __construct(string $file_name, string $cwd)
 	{//{{{
 		$command = "{$this->phpdbg} -q -b -I {$file_name}";
+		//$command = "{$this->phpdbg} -q -b -I -Scli {$file_name}";
 		if (defined('VERBOSE') && VERBOSE) echo($command."\n");
 		
 		$descriptorspec = [['pipe', 'r'], ['pipe', 'w'], ['pipe', 'w']];
