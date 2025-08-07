@@ -1,0 +1,42 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Cwd;
+
+if(@ARGV < 1) {
+	print STDERR "Error: Command line arguments is not set\n";
+	exit 255;
+}
+
+# help {{{
+
+if($ARGV[0] eq '-h' || $ARGV[0] eq '--help') {
+	my $help = <<HEREDOC;
+	
+Description: 
+Usage: $0
+
+HEREDOC
+	print STDOUT "$help";
+	exit 0;
+}
+
+# }}}
+
+# is current directory writable {{{
+
+my $cwd = getcwd();
+my $uid = $<;
+my $gid = $>;
+my @stat = stat($cwd);
+
+if(!(
+	($uid == $stat[4] && ($stat[2] & 0700) == 0700)
+	|| ($gid == $stat[5] && ($stat[2] & 0070) == 0070)
+)) {
+	print STDERR "Error: Current working directory is not writable\n";
+	exit 255;
+}
+
+# }}}
+
