@@ -1,0 +1,21 @@
+<?php
+function И(string $current_php) {
+	define('Ф', $current_php);
+	require('/srv/wordpress/tester/source.php');
+	require_once($current_php);
+}
+$Ы = 0;
+if($Ы == 1) // _ 00122:00045
+{//{{{//
+
+	И('/srv/wordpress/www/wp-includes/customize/class-wp-customize-header-image-setting.php');
+
+}//}}}//
+
+if($Ы == 2) // _ 00560:02965
+{//{{{//
+
+	И('/srv/wordpress/www/wp-includes/theme.php');
+
+}//}}}//
+

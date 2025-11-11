@@ -1,0 +1,4 @@
+00922:00114	$id = media_handle_upload( 'async-upload', $post_id );
+00993:00033	$upload_id = media_handle_upload( 'async-upload', $post_id );
+01089:00880	$id = media_handle_upload( 'async-upload', $_REQUEST['post_id'] );
+01144:02632	$attachment_id = media_handle_upload( 'async-upload', $post_id, $post_data );

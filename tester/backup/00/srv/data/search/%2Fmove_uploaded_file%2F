@@ -1,2 +1,0 @@
-00103:01014  $move_new_file = @move_uploaded_file( $file['tmp_name'], $new_file );
-00290:00073  if ( false === @move_uploaded_file( $tmp_name, $new_file ) ) {

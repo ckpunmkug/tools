@@ -1,0 +1,13 @@
+{
+    "cwd": "\/srv\/wordpress\/tester\/move_uploaded_file\/_wp_handle_upload\/wp_handle_upload\/Custom_Image_Header",
+    "history": [
+        "cd Custom_Image_Header",
+        "v grep",
+        "s",
+        "state",
+        "stat",
+        "q",
+        "stat",
+        "q"
+    ]
+}

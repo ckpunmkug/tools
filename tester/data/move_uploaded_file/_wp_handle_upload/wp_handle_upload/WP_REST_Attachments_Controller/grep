@@ -1,0 +1,5 @@
+00160:00101	'rest_controller_class' => 'WP_REST_Attachments_Controller',
+00293:00947	// Filter is fired in WP_REST_Attachments_Controller subclass.
+00293:03012	// The default status is different in WP_REST_Attachments_Controller.
+00294:00003	* REST API: WP_REST_Attachments_Controller class
+00294:00017	class WP_REST_Attachments_Controller extends WP_REST_Posts_Controller {

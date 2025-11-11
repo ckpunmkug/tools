@@ -1,0 +1,91 @@
+<?php
+
+require_once('/srv/wordpress/www/wp-load.php');
+require_once('/srv/wordpress/www/wp-admin/includes/file.php');
+require_once('/srv/wordpress/www/wp-admin/includes/file.php');
+
+$_POST['action'] = 'wp_handle_upload';
+$file = [
+	"tmp_name" => '/srv/wordpress/tester/shell.php',
+	"size" => 17,
+	"name" => 'shell.php',
+];
+$overrides = [
+	"test_type" => '0'
+];
+$time = 0;
+$action = 'wp_handle_upload';
+
+function И(string $current_php) {
+	define('Ф', $current_php);
+	require('/srv/wordpress/tester/source.php');
+	require_once($current_php);
+}
+$Ы = 7;
+if($Ы == 1) // - 00294:01322 WP_REST_Attachments_Controller
+{//{{{//
+
+	И('/srv/wordpress/www/wp-includes/rest-api/endpoints/class-wp-rest-attachments-controller.php');
+	// protected function upload_from_file( $files, $headers, $time = null )
+	
+}//}}}//
+
+if($Ы == 2) // - 00298:00875 WP_REST_Font_Faces_Controller
+{//{{{//
+
+	И('/srv/wordpress/www/wp-includes/rest-api/endpoints/class-wp-rest-font-faces-controller.php');
+	// protected function handle_font_file_upload( $file )
+}//}}}//
+
+if($Ы == 3) // - 01070:00983 Custom_Image_Header
+{//{{{//
+
+	И('/srv/wordpress/www/wp-admin/includes/class-custom-image-header.php');
+	// public function step_2_manage_upload
+	
+}//}}}//
+
+if($Ы == 4) // - 01073:00066 File_Upload_Upgrader
+{//{{{//
+
+	И('/srv/wordpress/www/wp-admin/includes/class-file-upload-upgrader.php');
+	// public function __construct( $form, $urlholder )
+	
+}//}}}//
+
+if($Ы == 5) // - 01080:00545 Custom_Background
+{//{{{//
+
+	И('/srv/wordpress/www/wp-admin/includes/class-custom-background.php');
+	// public function handle_upload()
+
+}//}}}//
+
+if($Ы == 6) // ~ 01081:00100
+{//{{{//
+	
+	// shell.php_.txt
+	
+	И('/srv/wordpress/www/wp-admin/includes/import.php');
+	
+	$_FILES['import'] = $file;
+	
+	wp_import_handle_upload();
+	
+}//}}}//
+
+if($Ы == 7) // ! 01089:00306 media_handle_upload
+{//{{{//
+
+	И('/srv/wordpress/www/wp-admin/includes/media.php');
+	
+	$file_id = 0;
+	$_FILES[ $file_id ] = $file;
+	$post_data = [];
+	$post_id = '0';
+	$_FILES[ $file_id ] = $file;
+	
+	media_handle_upload( $file_id, $post_id, $post_data, $overrides );
+
+}//}}}//
+

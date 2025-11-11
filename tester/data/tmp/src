@@ -1,0 +1,28 @@
+<?php
+function И(string $current_php) {
+	define('Ф', $current_php);
+	require('/srv/wordpress/tester/source.php');
+	require_once($current_php);
+}
+$Ы = 1;
+if($Ы == 1) // _ 01:01
+{//{{{//
+
+	И('/srv/wordpress/www/wp-trackback.php');
+
+}//}}}//
+
+if($Ы == 2) // _ 02:02
+{//{{{//
+
+	И('/srv/wordpress/www/wp-includes/feed-atom-comments.php');
+
+}//}}}//
+
+if($Ы == 3) // _ 03:03
+{//{{{//
+
+	И('/srv/wordpress/www/wp-includes/link-template.php');
+
+}//}}}//
+

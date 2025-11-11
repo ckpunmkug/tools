@@ -1,0 +1,26 @@
+<meta name="generator" content="WordPress 6.6" />
+
+$_SERVER['REQUEST_METHOD'] = 'GET';
+$_SERVER['HTTP_HOST'] = 'example.com';
+$_SERVER['HTTPS'] = '1';
+$_SERVER['SERVER_PORT'] = '443';
+$_SERVER['REQUEST_URI'] = '/';
+
+Try to crack this
+.................
+/srv/wordpress/www/wp-admin/admin.php - Main barrier
+check_admin_referer()
+is_admin()
+current_user_can( 'upload_files' ) 
+--------------------------------------------------------------------------------
+
+default includes
+{//{{{//
+
+require_once('/srv/wordpress/www/wp-load.php'); 
+require('/srv/wordpress/www/wp-admin/includes/file.php');
+	
+}//}}}//
+
+
+

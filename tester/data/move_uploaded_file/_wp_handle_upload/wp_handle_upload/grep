@@ -1,0 +1,7 @@
+00294:01322	$file = wp_handle_upload( $files['file'], $overrides, $time );
+00298:00875	$uploaded_file = wp_handle_upload( $file, $overrides );
+01070:00983	$file = wp_handle_upload( $uploaded_file, $overrides );
+01073:00066	$file      = wp_handle_upload( $_FILES[ $form ], $overrides );
+01080:00545	$file = wp_handle_upload( $uploaded_file, $overrides );
+01081:00100	$upload                    = wp_handle_upload( $_FILES['import'], $overrides );
+01089:00306	$file = wp_handle_upload( $_FILES[ $file_id ], $overrides, $time );

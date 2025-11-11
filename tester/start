@@ -1,0 +1,1275 @@
+#!/usr/bin/php
+<?php
+
+/* Cyclotron {{{
+
+#!/bin/sh
+#<?= "\r"; goto start; ?>
+FILE=`/usr/bin/realpath $0`
+while true
+	do
+	php -d auto_prepend_file=${FILE} -a
+	done
+<?php start:
+
+}}} */
+
+/* Info {{{
+
+Ctrl + \ - SIGQUIT
+grep -r --include="*.php" 'move_uploaded_file' "${HOME}/www"
+system("screen -t 'vim nu3ga' -s /usr/bin/bash vim /etc/passwd");
+
+$_SERVER = array (
+	'HTTP_HOST' => 'wordpress.localhost',
+	'HTTP_USER_AGENT' => 'Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0',
+	'HTTP_ACCEPT' => '* / *',
+	'HTTP_ACCEPT_LANGUAGE' => 'en-US,en;q=0.5',
+	'HTTP_ACCEPT_ENCODING' => 'gzip, deflate, br, zstd',
+	'HTTP_SEC_GPC' => '1',
+	'HTTP_CONNECTION' => 'keep-alive',
+	'HTTP_SEC_FETCH_DEST' => 'empty',
+	'HTTP_SEC_FETCH_MODE' => 'no-cors',
+	'HTTP_SEC_FETCH_SITE' => 'cross-site',
+	'HTTP_PRIORITY' => 'u=4',
+	'HTTP_PRAGMA' => 'no-cache',
+	'HTTP_CACHE_CONTROL' => 'no-cache',
+	'PATH' => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+	'SERVER_SIGNATURE' => "<address>Apache/2.4.62 (Debian) Server at wordpress.localhost Port 80</address>\n",
+	'SERVER_SOFTWARE' => 'Apache/2.4.62 (Debian)',
+	'SERVER_NAME' => 'wordpress.localhost',
+	'SERVER_ADDR' => '127.0.0.1',
+	'SERVER_PORT' => '80',
+	'REMOTE_ADDR' => '127.0.0.1',
+	'DOCUMENT_ROOT' => '/srv/wordpress/www',
+	'REQUEST_SCHEME' => 'http',
+	'CONTEXT_PREFIX' => '',
+	'CONTEXT_DOCUMENT_ROOT' => '/srv/wordpress/www',
+	'SERVER_ADMIN' => 'webmaster@localhost',
+	'SCRIPT_FILENAME' => '/srv/wordpress/www/index.php',
+	'REMOTE_PORT' => '45148',
+	'GATEWAY_INTERFACE' => 'CGI/1.1',
+	'SERVER_PROTOCOL' => 'HTTP/1.1',
+	'REQUEST_METHOD' => 'GET',
+	'QUERY_STRING' => '',
+	'REQUEST_URI' => '/',
+	'SCRIPT_NAME' => '/index.php',
+	'PHP_SELF' => '/index.php',
+	'REQUEST_TIME_FLOAT' => 1741455554.458104,
+	'REQUEST_TIME' => 1741455554,
+);	
+
+}}} */
+
+if(true) // Args
+{//{{{//
+
+	Args::$description = "Tester - A program for finding vulnerabilities in PHP source code";
+	
+	Args::add([
+		"-D", "--data-path", "<directory_path>", "Path to the data directory",
+		function ($string) {
+			define("DATA_PATH", rtrim($string, '/'));
+		}, true
+	]);
+	
+	Args::add([
+		"-W", "--docroot-path", "<directory_path>", "Path to the docroot directory",
+		function ($string) {
+			define("DOCROOT_PATH", rtrim($string, '/'));
+		}, true
+	]);
+	
+	Args::add([
+		"-C", "--create-files", NULL, "Create the necessary files",
+		function () {
+			define("CREATE_FILES", true);
+		}, false
+	]);
+	
+	Args::add([
+		"-T", "--test", NULL, "Using a test block",
+		function () {
+			define("TEST", true);
+		}, false
+	]);
+	
+	Args::apply();
+
+}//}}}//
+
+if(defined('CREATE_FILES')) // Create the necessary files
+{//{{{//
+	
+	$create_folder = function(string $path)
+	{//{{{//
+	
+		$return = file_exists($path);
+		if(!$return) {
+			$return = mkdir($path, 0750);
+			if(!$return) {
+				if (defined('DEBUG') && DEBUG) var_dump(['$path' => $path]);
+				trigger_error("Can't create folder", E_USER_WARNING);
+				return(false);
+			}
+		}
+		else {
+			$return = realpath($path);
+			if(!is_string($return)) {
+				if (defined('DEBUG') && DEBUG) var_dump(['$path' => $path]);
+				trigger_error("Can't get real path", E_USER_WARNING);
+				return(false);
+			}
+			
+			$return = is_dir($path);
+			if(!$return) {
+				if (defined('DEBUG') && DEBUG) var_dump(['$path' => $path]);
+				trigger_error("Path is no directory", E_USER_WARNING);
+				return(false);
+			}
+			
+			$return = is_readable($path);
+			if(!$return) {
+				if (defined('DEBUG') && DEBUG) var_dump(['$path' => $path]);
+				trigger_error("Path is not readable", E_USER_WARNING);
+				return(false);
+			}
+			
+			$return = is_writable($path);
+			if(!$return) {
+				if (defined('DEBUG') && DEBUG) var_dump(['$path' => $path]);
+				trigger_error("Path is not writable", E_USER_WARNING);
+				return(false);
+			}
+					
+			$return = is_executable($path);
+			if(!$return) {
+				if (defined('DEBUG') && DEBUG) var_dump(['$path' => $path]);
+				trigger_error("Path is not executable", E_USER_WARNING);
+				return(false);
+			}
+		}
+		
+		return(true);
+	
+	};//}}}//
+	
+// Create folders 'data', 'data/tmp' ///////////////////////////////////////////
+	
+	$return = $create_folder(DATA_PATH);
+	if(!$return)
+		trigger_error("Can't create 'data' folder", E_USER_ERROR);
+	
+	$return = $create_folder(DATA_PATH.'/tmp');
+	if(!$return)
+		trigger_error("Can't create 'data/tmp' folder", E_USER_ERROR);
+	
+// Find 'php' files ////////////////////////////////////////////////////////////
+	
+	$command = 'find '.DOCROOT_PATH.' | grep \'\\.php$\'';
+	$output = [];
+	$status = 0;
+	exec($command, $output, $status);
+	if($status != 0) {
+		if (defined('DEBUG') && DEBUG) var_dump(['DATA_PATH' => DATA_PATH]);
+		trigger_error("Can't find 'php' files in 'docroot' path", E_USER_ERROR);
+		exit(255);
+	}
+	$contents = implode("\n", $output);
+	
+	$file_path = DATA_PATH.'/php_files.lst';
+	$return = file_put_contents($file_path, $contents);
+	if(!is_int($return)) {
+		if (defined('DEBUG') && DEBUG) var_dump(['$file_path' => $file_path]);
+		trigger_error("Can't put 'php files' list to file", E_USER_ERROR);
+		exit(255);
+	}
+
+// Create 'phpdbg' commands file ///////////////////////////////////////////////
+
+	$contents = Data::default_phpdbg_commands();
+	$file_path = DATA_PATH.'/phpdbg.cmd';
+	$return = file_put_contents($file_path, $contents);
+	if(!is_int($return)) {
+		if (defined('DEBUG') && DEBUG) var_dump(['$file_path' => $file_path]);
+		trigger_error("Can't put 'default phpdbg commands' to file", E_USER_ERROR);
+		exit(255);
+	}
+	
+// Create 'parent' source file /////////////////////////////////////////////////
+	
+	$contents = Data::default_parent_source();
+	$file_path = DATA_PATH.'/source.php';
+	$return = file_put_contents($file_path, $contents);
+	if(!is_int($return)) {
+		if (defined('DEBUG') && DEBUG) var_dump(['$file_path' => $file_path]);
+		trigger_error("Can't put 'default parent source' to file", E_USER_ERROR);
+		exit(255);
+	}
+	
+////////////////////////////////////////////////////////////////////////////////
+
+	if(defined('VERBOSE') && VERBOSE) 
+		file_put_contents('php://stderr', "\nCreate the necessary files - Complete\n");
+	
+	exit(0);
+	
+}//}}}//
+
+
+if(defined('TEST')) // Test block
+{//{{{//
+
+	Tools::initialization();
+	
+	Tools::statistics();
+	
+	exit(0);
+
+}//}}}//
+
+function php_files()
+{//{{{//
+
+	$command = ' less '.escapeshellcmd(DATA_PATH.'/php_files.lst');
+	Tools::execute($command, 'less php_files');
+	
+}//}}}//
+
+function less(string $coordinates)
+{//{{{//
+
+	$return = Tools::resolve($coordinates);
+	if($return === false) {
+		trigger_error("Can't resolve passed string", E_USER_WARNING);
+		return(false);
+	}
+	$coordinates = $return;
+	
+	if(is_array($coordinates)) {
+		$command = 
+			'/usr/bin/less'
+			." +{$coordinates['line']}"
+			." --LINE-NUMBERS"
+			." --line-num-width 5"
+			." ".escapeshellcmd($coordinates['file'])
+		;
+		Tools::execute($command, "less {$coordinates['file']}");
+	}
+	else {
+		$command = 
+			'/usr/bin/less'
+			." --LINE-NUMBERS"
+			." --line-num-width 5"
+			." ".escapeshellcmd($coordinates)
+		;
+		Tools::execute($command, "less {$coordinates}");
+	}
+
+}//}}}//
+
+function vim(string $file)
+{//{{{//
+	
+	$argument = escapeshellarg($file);
+	Tools::execute("vim {$argument}", "vim {$file}");
+	
+}//}}}//
+
+function grep(string $expression) // (string) $result_file_path
+{//{{{/
+
+	$result = '';
+	$pattern = '/^(\d+):(.+)$/';
+	
+	foreach(Data::$php_files as $index => $php_file) {
+		
+		$command = "/usr/bin/grep -n '{$expression}' {$php_file}";
+		$output = [];
+		$return_var = 0;
+		exec($command, $output, $return_var);
+		if($return_var !== 0) continue;
+		
+		foreach($output as $string) {
+			if(preg_match($pattern, $string, $MATCH) == 1) {
+				$index = sprintf("%05d", $index);
+				$number = sprintf("%05d", intval($MATCH[1]));
+				$line = trim($MATCH[2]);
+				$result .= "{$index}:{$number}\t{$line}\n";
+			}
+		}
+	}
+	
+	$cwd = getcwd();
+	$dir_path = "{$cwd}/{$expression}";
+	if(file_exists($dir_path) && is_dir($dir_path)) {
+		chdir($dir_path);
+	}
+	else {
+		$return = mkdir($dir_path, 0750);
+		if(!$return) {
+			//if (defined('DEBUG') && DEBUG) var_dump(['"grep" folder' => $dir_path]);
+			trigger_error("Can't create 'grep' folder", E_USER_WARNING);
+			return(false);
+		}
+		chdir($dir_path);
+	}
+	
+	$file_path = getcwd().'/grep';
+	
+	$return = file_put_contents($file_path, $result);
+	if(!is_int($return)) {
+		if (defined('DEBUG') && DEBUG) var_dump(['grep file' => $file_path]);
+		trigger_error("Can't put contents to 'grep' file", E_USER_WARNING);
+		return(false);
+	}
+	
+	return($file_path);
+
+}//}}}//
+
+function src()
+{//{{{//
+
+	$file_path = getcwd().'/grep';
+	$return = file_get_contents($file_path);
+	if(!is_string($return)) {
+		if (defined('DEBUG') && DEBUG) var_dump(['$file_path' => $file_path]);
+		trigger_error("Can't get contents from 'grep' file", E_USER_WARNING);
+		return(false);
+	}
+	$LINE = explode("\n", $return);
+	
+	$COORDINATES = [];
+	foreach($LINE as $line) {
+		if(preg_match('/^(\d+):(\d+)\s+.+$/', $line, $MATCH) != 1) continue;
+		array_push($COORDINATES, "{$MATCH[1]}:{$MATCH[2]}");
+	}
+
+	$contents = Data::child_source($COORDINATES);
+	
+	$file_path = getcwd().'/src';
+	$return = file_put_contents($file_path, $contents);
+	if(!is_int($return)) {
+		if (defined('DEBUG') && DEBUG) var_dump(['src file' => $file_path]);
+		trigger_error("Can't put contents to 'src' file", E_USER_WARNING);
+		return(false);
+	}
+	
+}//}}}//
+
+function debug()
+{//{{{//
+	
+	$cmd_path = DATA_PATH.'/phpdbg.cmd';
+	$return = file_get_contents($cmd_path);
+	if(!is_string($return)) {
+		if (defined('DEBUG') && DEBUG) var_dump(['file' => $cmd_path]);
+		trigger_error("Can't get debugger commands from file", E_USER_WARNING);
+		return(false);
+	}
+	$commands = $return;
+	$COMMAND = explode("\n", $commands);
+	
+	$src_path = getcwd().'/src';
+	$PHPDebugger = new PHPDebugger($src_path, DOCROOT_PATH, 10, true);
+	$PHPDebugger->verbose = false;
+	foreach($COMMAND as $command) {
+		$command = trim($command);
+		if(preg_match('/^#.*$/', $command) == 1) continue;
+		
+		$string = $PHPDebugger->send($command);
+		$string = trim($string);
+		if(preg_match('/.*\[Script ended normally\]$/', $string) == 1) {
+			$PHPDebugger->send('quit');
+			break;
+		}
+	} echo("\n");
+	
+}//}}}//
+
+function coverage()
+{//{{{//
+	
+	$file_path = getcwd().'/src';
+	system("cd ".DOCROOT_PATH."; phpdbg -qrr -Scoverage {$file_path}");
+	
+}//}}}//
+
+function autocomplete()
+{//{{{//
+
+	$COMPLETION = ['php_files', 'less', 'debug', 'coverage', 'resolve'];
+	
+	$line = ltrim(readline_info('line_buffer'));
+	$pattern = '/^([^\s]+)\s+(.*)$/';
+	if(preg_match($pattern, $line, $MATCH) == 1) {
+		$line = $MATCH[2];
+		$COMPLETION = scandir(getcwd());
+	}
+	
+	$result = [];
+	$line = preg_quote($line);
+	$pattern = '/^'.$line.'.*$/';
+	foreach($COMPLETION as $completion) {
+		if(strlen($line) > strlen($completion)) continue;
+		
+		if(preg_match($pattern, $completion) == 1) {
+			array_push($result, $completion);
+		}
+	}
+	return($result);
+
+}//}}}//
+
+class Args
+{//{{{//
+
+	/* Usage example {{{
+	
+	Args::$description = "Program description";
+	Args::add([
+		"-a", "--A", NULL, "not required parameter",
+		function () {
+			define("A", true);
+		}, false
+	]);
+	Args::add([
+		"-b", "--B", NULL, "required parameter",
+		function () {
+			define("B", true);
+		}, true
+	]);
+	Args::add([
+		"-c", "--C", "STRING", "not required parameter with value",
+		function ($string) {
+			define("C", $string);
+		}, false
+	]);
+	Args::add([
+		"-d", "--D", "STRING", "required parameter with value",
+		function ($string) {
+			define("D", $string);
+		}, true
+	]);
+	Args::apply();
+	
+	}}} */
+
+	static $description = "";
+	static $config = [];
+	
+	static function help()
+	{//{{{//
+	
+		$text = "";
+		if (!empty(self::$description))
+			$text .= "\nDescription: ".self::$description."\n\n";
+		$text .= "Parameters: \n";
+		foreach (self::$config as $config) {
+			$text .= "\n";
+			if(!empty($config[0])) $text .= "  {$config[0]}";
+			if(!empty($config[1])) $text .= "  {$config[1]}";
+			if($config[2] !== null) $text .= "  {$config[2]}";
+			$text .= "\n\t{$config[3]}\n";
+		}
+		echo $text."\n";
+		return NULL;
+		
+	}//}}}//
+	
+	static function apply()
+	{//{{{//
+	
+		self::add();
+		global $argv;
+		array_walk(self::$config, function(array $config, int $index, array $argv) {
+			$c = count($argv);
+			for ($i = 1; $i < $c; $i++) {
+				if ($argv[$i] == $config[0] || $argv[$i] == $config[1]) {
+					if ($config[2] !== null) {
+						if (!isset($argv[($i+1)])) {
+							trigger_error("\"{$config[2]}\" is not set for \"{$config[0]}\" in command line", E_USER_ERROR);
+							exit(255);
+						}
+						self::$config[$index][4]($argv[$i+1]);
+						return null;
+					} else {
+						self::$config[$index][4]();
+						return null;
+					}
+				}
+			}
+			if (self::$config[$index][5]) {
+				trigger_error("\"{$config[0]}\" is not set in command line", E_USER_ERROR);
+				exit(255);
+			}
+		}, $argv);
+		
+	}//}}}//
+	
+	static function add(array $config = [])
+	{//{{{//
+	
+		if (!empty($config)) {
+			array_push(self::$config, $config);
+			return null;
+		}
+		self::add([
+			'-v', '--verbose', null, "Allow verbose messages to stderr", 
+			function() {
+				define('VERBOSE', true);
+			}, false
+		]);
+		self::add([
+			'-q', '--quiet', null, "Prevent output to stdout", 
+			function() {
+				define('QUIET', true);
+				ob_start();
+				register_shutdown_function(function () {
+					ob_end_clean();
+				} );
+			}, false
+		]);
+		self::add([
+			'-d', '--debug', null, "Run in debug mode", 
+			function() {
+				define('DEBUG', true);
+			}, false
+		]);
+		array_unshift(self::$config, [
+			'-h', '--help', null, "Show help text and exit",
+			function() {
+				self::help();
+				exit(0);
+			}, false
+		]);
+		
+	}//}}}//
+	
+}//}}}//
+
+class Data
+{//{{{//
+	
+	static $php_files = NULL;
+	
+	static function default_phpdbg_commands()
+	{//{{{//
+		
+		$commands = 
+///////////////////////////////////////////////////////////////{{{//
+<<<'HEREDOC'
+break ZEND_EXIT
+#break index.php:8
+run
+#ev var_dump($_SERVER);
+continue
+quit
+
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		
+		return($commands);
+		
+	}//}}}//
+	
+	static function default_parent_source()
+	{//{{{//
+		
+		$default_parent_source = 
+///////////////////////////////////////////////////////////////{{{//
+<<<'HEREDOC'
+<?php
+
+/*
+	Д - DOCROOT_PATH
+	Ф - CURRENT_PHP
+*/
+
+if(!true) {
+	$_SERVER = [
+		"PHP_SELF" => substr(Ф, strlen(Д)),
+		"SCRIPT_FILENAME" => Ф,
+	];	
+}
+
+// docroot_path
+
+Ж::init();
+
+function header(string $string) {
+	file_put_contents('php://stderr', "\n\x81\n{$string}\n\x81\n");
+}
+function is_uploaded_file(string $path) {
+        if(is_file($path) && is_readable($path)) return(true);
+        return(false);
+}
+function move_uploaded_file(string $source, string $destination) {
+        return(copy($source, $destination));
+}
+class Ж
+{
+	private static $class = NULL;
+	public static function init() {
+		if(self::$class === NULL) {
+			self::$class = new Ж();
+			return(true);
+		}
+		trigger_error("Duplicate call x80::init detected", E_USER_ERROR);
+		exit(255);
+	}
+	public static function status() {
+		if(self::$class === NULL) return(true);
+	}
+	public function __construct() {
+		if(Ж::status() === true) return($this->start());
+		trigger_error("Duplicate declare x80 class detected", E_USER_ERROR);
+	}
+	public function __destruct() {
+		$this->stop();
+	}
+	private function start() {
+		$_SERVER = [
+			"HTTP_HOST" => 'example.com',
+			"PHP_SELF" => '/index.php',
+		];
+		if(PHP_SAPI == 'coverage') {
+			phpdbg_start_oplog();
+		}
+	}
+	private function stop() {
+		if(PHP_SAPI == 'coverage') {
+			$return = phpdbg_end_oplog();
+			$this->print_oplog($return);
+		}	
+	}
+	private function print_oplog(array $oplog) {
+		$return = key_exists(Ф, $oplog);
+		if(!$return) {
+			if (defined('DEBUG') && DEBUG) var_dump(['file' => Ф]);
+			trigger_error("'file' not exists in 'oplog' array", E_USER_WARNING);
+			return(false);
+		}
+		$result = [];
+		$array = $oplog[Ф];
+		foreach($array as $line => $count) {
+			array_push($result, $line);
+		}
+		asort($result);
+		$text = implode(" ", $result);
+		file_put_contents('php://stderr', "\n\x80\n{$text}\n\x80\n");
+	}
+}
+
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		
+		$docroot_path = addslashes(DOCROOT_PATH);
+		$default_parent_source = preg_replace('/\/\/ docroot_path/', "define('Д', '{$docroot_path}');", $default_parent_source, 1);
+		
+		return($default_parent_source);
+		
+	}//}}}//
+	
+	static function child_source(array $COORDINATE)
+	{//{{{//
+		
+		$child_source = 
+///////////////////////////////////////////////////////////////{{{//
+<<<'HEREDOC'
+<?php
+function И(string $current_php) {
+	define('Ф', $current_php);
+	// parent_source
+	require_once($current_php);
+}
+
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		$parent_source = addslashes(DATA_PATH).'/source.php';
+		$child_source = preg_replace('/\/\/ parent_source/', "require('{$parent_source}');", $child_source, 1);
+		
+		$child_source .= '$Ы = 0;'."\n"; 
+		
+		foreach($COORDINATE as $index => $coordinate) {
+			$return = Tools::resolve($coordinate);
+			if(!is_array($return)) {
+				if (defined('DEBUG') && DEBUG) var_dump(['$coordinate' => $coordinate]);
+				trigger_error("Can't resolve coordinate", E_USER_WARNING);
+				return(false);
+			}
+			$current_php = $return["file"];
+			$index += 1;
+			
+			$child_source .= 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+if(\$Ы == {$index}) // _ {$coordinate}
+{//{{{//
+
+	И('{$current_php}');
+
+}//}}}//
+\n
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+
+		}
+		
+		return($child_source);
+		
+	}//}}}//
+	
+}//}}}//
+
+class Tools
+{//{{{//
+	
+	static function initialization()
+	{//{{{//
+		
+		$FOLDER = [DATA_PATH, DATA_PATH.'/tmp'];
+		foreach($FOLDER as $folder) {
+			if(!(
+				is_dir($folder)
+				&& is_readable($folder)
+				&& is_writable($folder)
+				&& is_executable($folder)
+			)) {
+				if (defined('DEBUG') && DEBUG) var_dump(['$folder' => $folder]);
+				trigger_error("Check folder failed", E_USER_WARNING);
+				return(false);
+			}
+		}
+		
+		$FILE = [
+			DATA_PATH.'/php_files.lst',
+			DATA_PATH.'/phpdbg.cmd',
+			DATA_PATH.'/source.php',
+		];
+		foreach($FILE as $file) {
+			if(!(
+				is_file($file)
+				&& is_readable($file)
+				&& is_writable($file)
+			)) {
+				if (defined('DEBUG') && DEBUG) var_dump(['$file' => $file]);
+				trigger_error("Check file failed", E_USER_WARNING);
+				return(false);
+			}
+		}
+		
+		$file_path = DATA_PATH.'/php_files.lst';
+		$return = file_get_contents($file_path);
+		if(!is_string($return)) {
+			if (defined('DEBUG') && DEBUG) var_dump(['$file_path' => $file_path]);
+			trigger_error("Can't get 'php files' list from file", E_USER_WARNING);
+			return(false);
+		}
+		Data::$php_files = explode("\n", $return);
+		
+		$return = getenv('HOME', true);
+		if(!is_string($return)) {
+			trigger_error("Can't get 'HOME' environment", E_USER_WARNING);
+			return(false);
+		}
+		define('HOME', $return);
+		
+		self::restore_state();
+		
+		return(true);
+		
+	}//}}}//
+
+	static function resolve(string $coordinates)
+	{//{{{//
+		
+		$pattern = '/^(\d+):(\d+)$/';
+		$return = preg_match($pattern, $coordinates, $MATCH);
+		if($return == 1) {
+			$index = intval($MATCH[1]);
+			$line = intval($MATCH[2]);
+			if(!key_exists($index, Data::$php_files)) {
+				trigger_error("Passed index does not exists in 'php_files' array", E_USER_WARNING);
+				return(false);
+			}
+			$file = Data::$php_files[$index];
+			return([
+				"file" => $file,
+				"line" => strval($line),
+			]);
+		}
+		
+		$pattern = '/^(.+):(\d+)$/';
+		$return = preg_match($pattern, $coordinates, $MATCH);
+		if($return == 1) {
+			$file = $MATCH[1];
+			$line = intval($MATCH[2]);
+			/*
+			if(!in_array($file, Data::$php_files)) {
+				trigger_error("Passed item does not exists in 'php_files' array", E_USER_WARNING);
+				return(false);
+			}
+			*/
+			return([
+				"file" => $file,
+				"line" => strval($line),
+			]);
+		}
+		
+		/*
+		if(!in_array($coordinates, Data::$php_files)) {
+			trigger_error("Passed item does not exists in 'php_files' array", E_USER_WARNING);
+			return(false);
+		}
+		*/
+		
+		return($coordinates);
+		
+	}//}}}//
+
+	static function execute(string $command, string $title)
+	{//{{{//
+		
+		$title = escapeshellarg($title);
+		system("/usr/bin/screen -t {$title} -s /usr/bin/bash {$command}");
+		
+	}//}}}//
+	
+	static function change_directory(string $path)
+	{//{{{//
+		
+		if($path == '' || $path == '~') {
+			$path = DATA_PATH;
+		}
+		$return = chdir($path);
+		if(!$return) {
+			file_put_contents('php://stderr', "\nCan't change directory\n");
+			return(false);
+		}
+		return(true);
+		
+	}//}}}//
+
+	static function save_state()
+	{//{{{//
+		
+		$hs = 8; // history size
+		
+		$cwd = getcwd();
+		$history = readline_list_history();
+		$c = count($history);
+		if($c > $hs) {
+			$history = array_slice($history, ($c-$hs), $hs);
+		}
+		
+		$state = [
+			"cwd" => $cwd,
+			"history" => $history,
+		];
+		
+		$json = json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+		
+		$return = file_put_contents(DATA_PATH.'/state.json', $json);
+		if(!is_int($return)) {
+			trigger_error("Can't save state", E_USER_WARNING);
+			return(false);
+		}
+		
+	}//}}}//
+	
+	static function restore_state()
+	{//{{{//
+		
+		$return = @file_get_contents(DATA_PATH.'/state.json');
+		if(!is_string($return)) {
+			chdir(DATA_PATH);
+			return(false);
+		}
+		
+		$state = json_decode($return, true);
+		if(!is_array($state)) {
+			trigger_error("Incorrect 'state' json", E_USER_WARNING);
+			return(false);
+		}
+		
+		$return = @chdir($state["cwd"]);
+		if(!$return) {
+			chdir(DATA_PATH);
+		}
+		
+		foreach($state["history"] as $line) {
+			readline_add_history($line);
+		}
+		
+		return(true);
+		
+	}//}}}//
+	
+	static function statistics()
+	{//{{{//
+		
+		$command = 'find '.DATA_PATH.' -type d';
+		$output = [];
+		$status = 0;
+		exec($command, $output, $status);
+		if($status != 0) {
+			trigger_error("Can't find all folders", E_USER_WARNING);
+			return(false);
+		}
+		$PATH = $output;
+		
+		$result = [
+			"no_src" => [],
+			"no_child" => [],
+			"_" => [],
+			"-" => [],
+			"?" => [],
+			"~" => [],
+			"!" => [],
+			"#" => [],
+		];
+		
+		$parse_line = function(string $line) {
+		
+			$line = trim($line);
+			$pattern = '/^if\([^\)]+\)\s+\/\/\s+([^\s]+)\s+\d+:\d+\s*(.*)$/';
+			$return = preg_match($pattern, $line, $MATCH);
+			if($return == 1) {
+				return([
+					"state" => $MATCH[1],
+					"child" => $MATCH[2],
+				]);
+			}
+			return(false);
+		};
+		
+		foreach($PATH as $path) {
+			$NAME = scandir($path);
+			if(!is_array($NAME) || !in_array('grep', $NAME)) continue;
+			
+			// no src
+			if(!in_array('src', $NAME)) {
+				if(!in_array($path, $result["no_src"])) {
+					array_push($result["no_src"], $path);
+				}
+				continue;
+			}
+			
+			// src present			
+			$contents = file_get_contents($path.'/src');
+			if(!is_string($contents)) continue;
+			$LINE = explode("\n", $contents);
+			
+			foreach($LINE as $line) {
+				$return = $parse_line($line);
+				if(!is_array($return)) continue;
+				
+				$state = $return["state"];
+				$child= $return["child"];
+				
+				if($state != '#' && $child == '') {
+					if(!in_array($path, $result["no_child"])) {
+						array_push($result["no_child"], $path);
+					}
+				}
+			
+				if(!key_exists($state, $result)) {
+					continue;
+				}
+				
+				if(!in_array($path, $result["${state}"])) {
+					array_push($result["${state}"], $path);
+				}
+			} // foreach($LINE as $line)
+			
+		} // foreach($PATH as $path)
+		
+		foreach($result as $key => $array) {
+			echo("\n[ {$key} ]\n");
+			foreach($array as $path) {
+				echo("{$path}/src\n");
+			}
+		}
+		
+		return(NULL);
+		
+	}//}}}//
+	
+}//}}}//
+
+class PHPDebugger
+{//{{{//
+
+// Usage
+/*{{{
+
+	$PHPDebugger = new PHPDebugger('/var/www/html/index.php', '/var/www/html', 10, true);
+
+	$commands = 
+<<<'HEREDOC'
+break ZEND_EXIT
+run
+ev var_dump($_SERVER);
+continue
+quit
+HEREDOC;
+	$COMMAND = explode("\n", $commands);
+
+	foreach($COMMAND as $command) {
+		$PHPDebugger->send($command);
+	}
+
+}}}*/
+
+// Excerpts from the pages of help.
+/* {{{
+	-c      -c/my/php.ini       Set php.ini file to load
+	-n                          Disable default php.ini
+	-q                          Suppress welcome banner
+	-b                          Disable colour
+	-i      -imy.init           Set .phpdbginit file
+	-I                          Ignore default .phpdbginit
+	-O      -Omy.oplog          Sets oplog output file
+	-p      -p, -p=func, -p*    Output opcodes and quit
+  
+	set prompt abcd
+	set quiet on
+	set pagination off
+
+	break my_function#14 - Break at the opline #14 of the function my_function
+	break \my\class::method#2 - Break at the opline #2 of the method \my\class::method
+	break test.php:#3 - Break at opline #3 in test.php
+	break ZEND_ADD - Break on any occurrence of the opcode ZEND_ADD
+			
+
+	run       attempt execution
+	continue  continue execution
+}}} */
+
+	var $phpdbg = '/usr/bin/phpdbg';
+	var $process = NULL;
+	var $pid = 0;
+	var $PIPE = NULL;
+	var $prompt = '';
+	var $timeout = 30;
+	var $verbose = true;
+	
+	function __construct(string $file_name, string $cwd)
+	{//{{{
+		$command = "{$this->phpdbg} -q -b -I {$file_name}";
+		if (defined('VERBOSE') && VERBOSE) echo($command."\n");
+		
+		$descriptorspec = [['pipe', 'r'], ['pipe', 'w'], ['pipe', 'w']];
+		$env = ['HOME='.HOME];
+		$this->process = proc_open($command, $descriptorspec, $this->PIPE, $cwd, $env);
+		if (!is_resource($this->process)) {
+			throw new Exception("can't start PHP Debugger");
+		}
+		
+		$array = proc_get_status($this->process);
+		if (!is_array($array)) {
+			throw new Exception("can't get phpdbg process status");
+		}
+		$this->pid = $array['pid'];
+		
+		$this->prompt = uniqid().">";
+		stream_set_blocking($this->PIPE[1], false);
+
+		$return = $this->send("set prompt {$this->prompt}");
+		if (!is_string($return)) {
+			throw new Exception("can't set prompt");
+		}
+		
+		$this->send('set quiet on');
+		$this->send('set pagination off');
+	}//}}}
+	
+	function __destruct()
+	{//{{{
+		if($this->process === NULL) return(false);
+		
+		fwrite($this->PIPE[0], "quit\n");
+		
+		fclose($this->PIPE[0]);
+		fclose($this->PIPE[1]);
+		//fclose($this->PIPE[2]);
+		
+		$return = proc_close($this->process);
+		$this->process = NULL;
+	}//}}}
+
+	function send(string $command)
+	{//{{{
+		if($this->process === NULL) {
+			trigger_error("phpdbg is closed", E_USER_WARNING);
+			return(false);
+		}
+	
+		$command = trim($command);
+		if (defined('VERBOSE') && VERBOSE) echo($command."\n");
+		if ($this->verbose) echo($command."\n");
+		
+		if($command == 'quit' || $command == 'q') {
+			$this->__destruct();
+			return('');
+		}
+		
+		$command .= "\n";
+		fwrite($this->PIPE[0], $command);
+		
+		$contents = '';
+		$contents_length = 0;
+		
+		$buffer = '';
+		$buffer_length = 0x100;
+		
+		$prompt = $this->prompt." ";
+		$prompt_length = strlen($prompt);
+		
+		$timeout = time() + $this->timeout;
+		
+		while (true) {
+			if (!(time() < $timeout)) {
+				trigger_error("command execution timeout", E_USER_WARNING);
+				$this->emergency_halt();
+				return(false);
+			}
+			
+			$buffer = fread($this->PIPE[1], $buffer_length);
+			
+			if (!is_string($buffer)) {
+				trigger_error("can't read process stdout", E_USER_WARNING);
+				return(false);
+			}
+			
+			if (empty($buffer)) {
+				usleep(100000);
+				continue;
+			}
+			
+			if (defined('VERBOSE') && VERBOSE) echo($buffer);
+			if ($this->verbose) echo($buffer);
+			
+			$contents_length += strlen($buffer);
+			$contents .= $buffer;
+			
+			if ($contents_length < $prompt_length) continue;
+			
+			$string = substr($contents, ($contents_length - $prompt_length), $prompt_length);
+			if (strcmp($string, $prompt) === 0) {
+				$contents = substr($contents, 0, ($contents_length - $prompt_length));
+				break;
+			}
+		}
+		
+		return($contents);
+	}//}}}
+	
+	function emergency_halt()
+	{//{{{
+		fclose($this->PIPE[0]);
+		fclose($this->PIPE[1]);
+		fclose($this->PIPE[2]);
+		
+		system("/usr/bin/pkill -TERM -P {$this->pid}");
+		
+		proc_close($this->process);
+		$this->process = NULL;
+	}//}}}
+
+}//}}}//
+
+class ReadLine
+{//{{{//
+	
+	static $COMMAND = [
+// main commands ///////////////////////////////////////////////////////////////
+		[ 'q', 'quit', 'exit(0);' ],
+		[ 'g', 'grep', 'grep($argument);' ],
+		[ 's', 'src', 'src();' ],
+		[ 'v', 'vim', 'vim($argument);' ],
+		[ 'l', 'less', 'less($argument);' ],
+		[ 'c', 'coverage', 'coverage();' ],
+		[ 'd', 'debug', 'debug();' ],
+		[ 'r', 'resolve', 'var_dump(self::resolve($argument));' ],
+		[ 'p', 'php_files', 'php_files();' ],
+		[ NULL, 'stat', 'Tools::statistics();' ],
+// shell commands //////////////////////////////////////////////////////////////
+		[ NULL, 'cd', 'Tools::change_directory($argument);' ],
+		[ NULL, 'dir', 'system("dir -a -b -1 --group-directories-first -p -l -h --time-style=iso {$argument}");' ],
+		[ NULL, 'touch', 'system("{$command} {$argument}");' ],
+		[ NULL, 'mkdir', 'system("{$command} {$argument}");' ],
+		[ NULL, 'cp', 'system("{$command} {$argument}");' ],
+		[ NULL, 'mv', 'system("{$command} {$argument}");' ],
+		[ NULL, 'rm', 'system("{$command} {$argument}");' ],
+		[ NULL, 'find', 'system("{$command} {$argument}");' ],
+		[ NULL, 'tree', 'system("{$command} {$argument}");' ],
+	];
+	
+	static function read()
+	{//{{{//
+	
+		$cwd = getcwd();
+		echo("\n{$cwd}\n");
+		$line = readline("T > ");
+		$line = trim($line);
+		
+		$pattern = '/^([^\s]+)\s*(.*)$/';
+		if(preg_match($pattern, $line, $MATCH) == 1) {
+			$history = readline_list_history();
+			$string = array_pop($history);
+			if($string != $line) {
+				readline_add_history($line);
+			}
+			$command = $MATCH[1];
+			$argument = $MATCH[2];
+		}
+		else return(NULL);
+		
+		ReadLine::act($command, $argument);
+		return(NULL);
+						
+	}//}}}//
+	
+	static function act(string $command, string $argument)
+	{//{{{//
+		
+		foreach(self::$COMMAND as $array) {
+			if($array[0] == $command || $array[1] == $command) {
+				eval($array[2]);
+				return(NULL);
+			}
+		}
+		
+		file_put_contents('php://stderr', "\nUnknown command\n");
+		return(NULL);
+		
+	}//}}}//
+	
+}//}}}//
+
+function main()
+{//{{{//
+
+	$return = Tools::initialization();
+	if(!$return) {
+		trigger_error("Initialization failed", E_USER_ERROR);
+	}
+
+	register_shutdown_function(function() {
+		Tools::save_state();
+	});
+
+	while(true) {
+		ReadLine::read();
+	}
+	
+	exit(0);
+	
+}//}}}//
+
+main();
+
+__halt_compiler();

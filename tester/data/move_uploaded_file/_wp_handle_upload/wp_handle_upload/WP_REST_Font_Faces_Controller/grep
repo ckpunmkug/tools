@@ -1,0 +1,3 @@
+00160:00635	'rest_controller_class' => 'WP_REST_Font_Faces_Controller',
+00298:00003	* REST API: WP_REST_Font_Faces_Controller class
+00298:00013	class WP_REST_Font_Faces_Controller extends WP_REST_Posts_Controller {

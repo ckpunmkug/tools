@@ -1,0 +1,10 @@
+00924:00161	$file_upload = new File_Upload_Upgrader( 'pluginzip', 'package' );
+00924:00195	// Make sure the attachment still exists, or File_Upload_Upgrader will call wp_die()
+00924:00201	$file_upload = new File_Upload_Upgrader( 'pluginzip', 'package' );
+00924:00313	$file_upload = new File_Upload_Upgrader( 'themezip', 'package' );
+00924:00347	// Make sure the attachment still exists, or File_Upload_Upgrader will call wp_die()
+00924:00353	$file_upload = new File_Upload_Upgrader( 'themezip', 'package' );
+01065:00076	* See File_Upload_Upgrader class.
+01067:01283	/** File_Upload_Upgrader class */
+01073:00003	* Upgrade API: File_Upload_Upgrader class
+01073:00020	class File_Upload_Upgrader {

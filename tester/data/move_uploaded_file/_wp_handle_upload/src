@@ -1,0 +1,42 @@
+<?php
+
+require_once('/srv/wordpress/www/wp-load.php');
+require_once('/srv/wordpress/www/wp-admin/includes/file.php');
+
+$_POST['action'] = 'wp_handle_upload';
+$file = [
+	"tmp_name" => '/srv/wordpress/tester/shell.php',
+	"size" => 17,
+	"name" => 'shell.php',
+];
+$overrides = [
+	"test_type" => '0'
+];
+$time = 0;
+$action = 'wp_handle_upload';
+
+function И(string $current_php) {
+	define('Ф', $current_php);
+	require('/srv/wordpress/tester/source.php');
+	require_once($current_php);
+}
+$Ы = 2;
+if($Ы == 1) // ! 01110:01105 wp_handle_upload
+{//{{{//
+
+	И('/srv/wordpress/www/wp-admin/includes/file.php');
+	
+	wp_handle_upload($file, $overrides, $time);
+
+}//}}}//
+
+if($Ы == 2) // ! 01110:01136
+{//{{{//
+
+	И('/srv/wordpress/www/wp-admin/includes/file.php');
+
+	$overrides['action'] = 'wp_handle_upload';
+	wp_handle_sideload( $file, $overrides, $time );
+
+}//}}}//
+

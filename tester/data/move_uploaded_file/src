@@ -1,0 +1,31 @@
+<?php
+
+require_once('/srv/wordpress/www/wp-load.php');
+
+function И(string $current_php) {
+	define('Ф', $current_php);
+	require('/srv/wordpress/tester/source.php');
+	require_once($current_php);
+}
+$Ы = 1;
+if($Ы == 1) // ! 01110:01014 _wp_handle_upload
+{//{{{//
+
+	И('/srv/wordpress/www/wp-admin/includes/file.php');
+	
+	$_POST['action'] = 'wp_handle_upload';
+	$file = [
+		"tmp_name" => '/srv/wordpress/tester/shell.php',
+		"size" => 17,
+		"name" => 'shell.php',
+	];
+	$overrides = [
+		"test_type" => '0'
+	];
+	$time = 0;
+	$action = 'wp_handle_upload';
+	
+	_wp_handle_upload( $file, $overrides, $time, $action );
+
+}//}}}//
+

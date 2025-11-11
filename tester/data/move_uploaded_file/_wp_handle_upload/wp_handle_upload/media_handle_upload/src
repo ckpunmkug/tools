@@ -1,0 +1,71 @@
+<?php
+
+$_POST['action'] = 'wp_handle_upload';
+$file = [
+	"tmp_name" => '/srv/wordpress/tester/shell.php',
+	"size" => 17,
+	"name" => 'shell.php',
+];
+$overrides = [
+	"test_type" => '0'
+];
+$time = 0;
+$action = 'wp_handle_upload';
+
+$file_id = 0;
+$_FILES[ $file_id ] = $file;
+
+function И(string $current_php) {
+	define('Ф', $current_php);
+	require('/srv/wordpress/tester/source.php');
+
+	require_once('/srv/wordpress/www/wp-load.php');
+	require_once($current_php);
+	require_once('/srv/wordpress/www/wp-admin/includes/media.php');
+	require_once('/srv/wordpress/www/wp-admin/includes/file.php');
+
+}
+$Ы = 4;
+if($Ы == 1) // # 00922:00114
+{//{{{//
+	
+	// require_once ABSPATH . 'wp-admin/admin.php';
+	
+	И('/srv/wordpress/www/wp-admin/async-upload.php');
+
+}//}}}//
+
+if($Ы == 2) // # 00993:00033
+{//{{{//
+
+	// require_once __DIR__ . '/admin.php';
+
+	И('/srv/wordpress/www/wp-admin/media-new.php');
+
+}//}}}//
+
+if($Ы == 3) // ? 01089:00880
+{//{{{//
+
+	check_admin_referer( 'media-form' );
+
+	И('/srv/wordpress/www/wp-admin/includes/media.php');
+	
+	$_FILES['async-upload'] = $file;
+	$_POST['html-upload'] = '1';
+	
+	wp_media_upload_handler();
+
+}//}}}//
+
+if($Ы == 4) // ? 01144:02632
+{//{{{//
+	
+	// check_ajax_referer( 'media-form' );
+
+	И('/srv/wordpress/www/wp-admin/includes/ajax-actions.php');
+	
+	wp_ajax_upload_attachment();
+	
+}//}}}//
+

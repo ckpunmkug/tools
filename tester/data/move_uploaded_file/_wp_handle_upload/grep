@@ -1,0 +1,2 @@
+01110:01105	return _wp_handle_upload( $file, $overrides, $time, $action );
+01110:01136	return _wp_handle_upload( $file, $overrides, $time, $action );
