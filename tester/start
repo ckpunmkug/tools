@@ -98,6 +98,7 @@ if(true) // Args
 
 }//}}}//
 
+
 if(defined('CREATE_FILES')) // Create the necessary files
 {//{{{//
 	
@@ -216,7 +217,6 @@ if(defined('CREATE_FILES')) // Create the necessary files
 	
 }//}}}//
 
-
 if(defined('TEST')) // Test block
 {//{{{//
 
@@ -227,6 +227,7 @@ if(defined('TEST')) // Test block
 	exit(0);
 
 }//}}}//
+
 
 function php_files()
 {//{{{//
@@ -356,12 +357,22 @@ function src()
 		return(false);
 	}
 	
+	$contents = Data::default_phpdbg_commands();
+	
+	$file_path = getcwd().'/cmd';
+	$return = file_put_contents($file_path, $contents);
+	if(!is_int($return)) {
+		if (defined('DEBUG') && DEBUG) var_dump(['$file_path' => $file_path]);
+		trigger_error("Can't put 'default phpdbg commands' to file", E_USER_ERROR);
+		exit(255);
+	}
+	
 }//}}}//
 
 function debug()
 {//{{{//
 	
-	$cmd_path = DATA_PATH.'/phpdbg.cmd';
+	$cmd_path = getcwd().'/cmd';
 	$return = file_get_contents($cmd_path);
 	if(!is_string($return)) {
 		if (defined('DEBUG') && DEBUG) var_dump(['file' => $cmd_path]);
@@ -374,17 +385,27 @@ function debug()
 	$src_path = getcwd().'/src';
 	$PHPDebugger = new PHPDebugger($src_path, DOCROOT_PATH, 10, true);
 	$PHPDebugger->verbose = false;
+	$log = '';
 	foreach($COMMAND as $command) {
 		$command = trim($command);
 		if(preg_match('/^#.*$/', $command) == 1) continue;
 		
 		$string = $PHPDebugger->send($command);
+		$log .= $string;
 		$string = trim($string);
 		if(preg_match('/.*\[Script ended normally\]$/', $string) == 1) {
 			$PHPDebugger->send('quit');
 			break;
 		}
 	} echo("\n");
+	
+	$file_path = getcwd().'/log';
+	$return = file_put_contents($file_path, $log);
+	if(!is_int($return)) {
+		if (defined('DEBUG') && DEBUG) var_dump(['$file_path' => $file_path]);
+		trigger_error("Can't put 'phpdbg log' contents to file", E_USER_WARNING);
+		return(false);
+	}
 	
 }//}}}//
 
@@ -921,14 +942,13 @@ class Tools
 		$PATH = $output;
 		
 		$result = [
-			"no_src" => [],
-			"no_child" => [],
-			"_" => [],
-			"-" => [],
-			"?" => [],
-			"~" => [],
-			"!" => [],
-			"#" => [],
+			"incomplete" => [],
+//			"_" => [],
+//			"-" => [],
+//			"?" => [],
+//			"~" => [],
+//			"!" => [],
+			"protected" => [],
 		];
 		
 		$parse_line = function(string $line) {
@@ -947,15 +967,7 @@ class Tools
 		
 		foreach($PATH as $path) {
 			$NAME = scandir($path);
-			if(!is_array($NAME) || !in_array('grep', $NAME)) continue;
-			
-			// no src
-			if(!in_array('src', $NAME)) {
-				if(!in_array($path, $result["no_src"])) {
-					array_push($result["no_src"], $path);
-				}
-				continue;
-			}
+			if(!is_array($NAME) || !in_array('src', $NAME)) continue;
 			
 			// src present			
 			$contents = file_get_contents($path.'/src');
@@ -969,28 +981,30 @@ class Tools
 				$state = $return["state"];
 				$child= $return["child"];
 				
-				if($state != '#' && $child == '') {
-					if(!in_array($path, $result["no_child"])) {
-						array_push($result["no_child"], $path);
+				if($state == '#') {
+					if(!key_exists($path, $result["protected"])) {
+						$result["protected"]["{$path}"] = 0;
 					}
+					$result["protected"]["{$path}"] += 1;
 				}
-			
-				if(!key_exists($state, $result)) {
-					continue;
-				}
-				
-				if(!in_array($path, $result["${state}"])) {
-					array_push($result["${state}"], $path);
+				elseif($child == '') {
+					if(!key_exists($path, $result["incomplete"])) {
+						$result["incomplete"]["{$path}"] = 0;
+					}
+					$result["incomplete"]["{$path}"] += 1;
 				}
 			} // foreach($LINE as $line)
 			
 		} // foreach($PATH as $path)
 		
 		foreach($result as $key => $array) {
-			echo("\n[ {$key} ]\n");
-			foreach($array as $path) {
-				echo("{$path}/src\n");
+			$text = '';
+			$total = 0;	
+			foreach($array as $path => $count) {
+				$total += $count;
+				$text .= "{$path} - {$count}\n";
 			}
+			echo("\n{$key} - {$total}\n{$text}");
 		}
 		
 		return(NULL);
@@ -1193,7 +1207,7 @@ class ReadLine
 		[ 'l', 'less', 'less($argument);' ],
 		[ 'c', 'coverage', 'coverage();' ],
 		[ 'd', 'debug', 'debug();' ],
-		[ 'r', 'resolve', 'var_dump(self::resolve($argument));' ],
+		[ 'r', 'resolve', 'var_dump(Tools::resolve($argument));' ],
 		[ 'p', 'php_files', 'php_files();' ],
 		[ NULL, 'stat', 'Tools::statistics();' ],
 // shell commands //////////////////////////////////////////////////////////////
@@ -1213,7 +1227,7 @@ class ReadLine
 	
 		$cwd = getcwd();
 		echo("\n{$cwd}\n");
-		$line = readline("T > ");
+		$line = readline("[T]> ");
 		$line = trim($line);
 		
 		$pattern = '/^([^\s]+)\s*(.*)$/';

@@ -1,0 +1,134 @@
+*
+	{
+		font-family: Sans;
+		background: none;
+		color: #CCC;
+		outline: none;
+	}
+*::selection
+	{
+		background: #888;
+		color: #FFF;
+	}
+body
+	{
+		margin: 0;
+		padding: 0;
+		background: #303030;
+	}
+hr
+	{
+		border: none;
+		height: 1px;
+		background: #555;
+		margin: 2ch 0;
+	}
+header
+	{
+		display: block;
+		background: #565656;
+		padding: 1ch;
+		line-height: 3ch;
+		border-top: solid 1px #1f1f1f;
+		border-bottom: solid 1px #1f1f1f;
+	}
+header a
+	{
+		margin: 1ch;
+		text-decoration: none;
+	}
+	
+/* Form */
+form a 
+	{
+		margin: 0 2ch;
+		text-decoration: none;
+	}
+	
+fieldset
+	{
+		margin: 1ch;
+		padding: 0.8ch 1.2ch;
+		border-radius: 6px;
+		border: solid 2px #555;
+	}
+fieldset legend
+	{
+		padding: 0.5ch  1ch;
+	}
+button
+	{
+		font-family: Sans;
+		font-size: 100%;
+		margin: 1ch 0;
+		padding: 0.8ch 1.2ch;
+		border: none;
+		background: #555;
+		border-radius: 6px;
+	}
+button:focus
+	{
+		outline: solid 2px #48F;
+	}
+input[type="text"], input[type="password"], textarea
+	{
+		font-family: Sans;
+		font-size: 100%;
+		width: calc(100% - 2.4ch);
+		margin: 1ch 0;
+		padding: 0.8ch 1.2ch;
+		border: none;
+		background: #222;
+		border-radius: 6px;
+	}
+input[type="text"]:focus
+	{
+		outline: solid 2px #48F;
+	}
+textarea
+	{
+		height: 18ch;
+		resize: none;
+	}
+iframe
+	{
+		margin: 1ch;
+		border-radius: 6px;
+		border: solid 2px #555;
+		width: calc(100% - 2ch);
+		height: 18ch;
+	}
+span[class="legend"] 
+	{
+		margin: 1ch;
+	}
+
+/* selection sheet */
+li {
+	list-style: none;
+}
+input[type="checkbox"]
+	{
+		appearance: none;
+		position: relative;
+		top: 0.7ch;
+		width: 2ch;
+		height: 2ch;
+		border: solid 2px #777;
+		border-radius: 2px;
+		background: #111;
+	}
+input[type="checkbox"]:focus
+	{
+		outline: solid 2px #48F;
+	}
+input[type="checkbox"]:checked
+	{
+		background: #DDD;
+	}
+li a 
+	{
+		margin: 0;
+		text-decoration: none;
+	}
+
