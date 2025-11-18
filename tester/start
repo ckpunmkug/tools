@@ -701,7 +701,7 @@ HEREDOC;
 <<<'HEREDOC'
 <?php
 function И(string $current_php) {
-	define('Ф', $current_php);
+	if(!defined('Ф')) define('Ф', $current_php);
 	// parent_source
 	require_once($current_php);
 }
