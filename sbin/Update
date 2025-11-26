@@ -15,7 +15,7 @@ run ()
 	
 }
 
-run /usr/sbin/ntpdate us.pool.ntp.org
+run /usr/sbin/ntpdate-debian
 run /usr/sbin/hwclock -w
 run /usr/bin/apt update
 run /usr/bin/apt upgrade

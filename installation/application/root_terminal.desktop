@@ -1,7 +1,7 @@
 [Desktop Entry]
 Encoding=UTF-8
-Name=Isolated Root Terminal
-Exec=/usr/bin/xfce4-terminal --command=/usr/local/bin/isolated_root_terminal
+Name=Root Terminal
+Exec=/usr/bin/xfce4-terminal --command=/usr/local/bin/root_terminal
 Icon=utilities-terminal
 StartupNotify=false
 Terminal=false

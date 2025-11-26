@@ -8,7 +8,6 @@ DIR=`/usr/bin/dirname ${FILE}`
 BASENAME=`basename ${FILE}`
 
 APACHE2_DIR="/etc/apache2"
-PHP_DIR="/etc/php/8.2/apache2"
 SYSTEM_DIR="/lib/systemd/system"
 
 HELP="
@@ -138,6 +137,9 @@ fi #}}}
 
 if  true && notice "copy configuration files"
 then #{{{
+
+VERSION=`php -v | grep -oP 'PHP \K[0-9]+\.[0-9]+'`
+PHP_DIR="/etc/php/${VERSION}/apache2"
 
 run cp -v ${DIR}/etc/apache2/apache2.conf ${APACHE2_DIR}/
 run cp -v ${DIR}/etc/apache2/ports.conf ${APACHE2_DIR}/

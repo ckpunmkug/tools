@@ -7,9 +7,9 @@ then
 	export DISPLAY="${2}"
 	export XAUTHORITY="${3}"
 	export PROFILE_DIR="${4}"
-	ip netns exec isolator su -s /bin/sh -w DISPLAY,XAUTHORITY -l ${USER} -c "firefox --profile ${PROFILE_DIR}"
+	ip netns exec isolator su -s /bin/sh -w DISPLAY,XAUTHORITY -l ${USER} -c "firefox --profile ${PROFILE_DIR} --private-window"
 else
-	PROFILE_DIR="${HOME}/.config/ilamp_firefox"
+	PROFILE_DIR="${HOME}/.config/mozilla/isolated_firefox"
 	if test ! -d ${PROFILE_DIR}
 	then
 		mkdir -p ${PROFILE_DIR}
