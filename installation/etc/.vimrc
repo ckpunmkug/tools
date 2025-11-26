@@ -1,16 +1,18 @@
 syntax off
 set autoindent
 
+" set fileencoding=us-ascii
+set fileencoding=utf-8
+
 highlight MatchParen ctermfg=DarkRed ctermbg=Black
 highlight Folded ctermfg=DarkGrey ctermbg=Black
 
 " zc zo close open fold zM zR close open All folds
 set foldmethod=marker
 
-set tabstop=4
-set softtabstop=4
-set shiftwidth=4
-"set expandtab
+set tabstop=8
+set softtabstop=8
+set shiftwidth=8
 set nowrap
 set noswapfile
 set showtabline=2
@@ -24,9 +26,6 @@ nmap <C-T> :tabnew
 " quit
 imap <C-W> <C-[>:q<CR>
 nmap <C-W> :q<CR>
-" forced quit
-imap <C-Q> <C-[>:q!<CR>
-nmap <C-Q> :q!<CR>
 " save
 imap <C-S> <C-[>:w<CR>a
 nmap <C-S> :w<CR>
@@ -36,18 +35,27 @@ nmap <C-Z> u
 " redo
 imap <C-Y> <C-[><C-R>a
 nmap <C-Y> <C-R>
-" paste
+" paste 
 imap <C-P> <C-[>:set paste<CR>a
 nmap <C-P> :set nopaste<CR>
 
-
 imap <CR> <CR>x<BS>
 imap {<CR> {<CR>}<UP><END><CR><TAB>
+imap {/<CR> {//{{{//<CR>}//}}}//<CR><UP><UP><END><CR><TAB>
+imap {*<CR> {/*{{{*/<CR>}/*}}}*/<CR><UP><UP><END><CR><TAB>
+
+abbreviate _W_ if(defined('DEBUG') && DEBUG) var_dump(['' => ]);<CR>trigger_error("", E_USER_WARNING);<CR>return(false);
+abbreviate _E_ if(defined('DEBUG') && DEBUG) var_dump(['' => ]);<CR>trigger_error("", E_USER_ERROR);<CR>exit(255);
+abbreviate _D_ var_dump(); die;
+abbreviate _V_ if(defined('VERBOSE') && VERBOSE) <CR>	file_put_contents('php://stderr', "");
+abbreviate .w. trigger_error("", E_USER_WARNING);<CR>return(false);
+abbreviate .e. trigger_error("", E_USER_ERROR);<CR>exit(255);
+abbreviate _H_ ///////////////////////////////////////////////////////////////{{{//<CR><<<HEREDOC<CR>HEREDOC;<CR>///////////////////////////////////////////////////////////////}}}//
 
 " color column tuning
 nmap \| :set colorcolumn=81<CR>
 nmap <ESC>\| :set colorcolumn=<CR>
-highlight ColorColumn term=reverse ctermbg=DarkGrey
+highlight ColorColumn ctermbg=Blue ctermfg=White
 
 " switch between tabs
 imap <ESC>1 <C-[>1gta

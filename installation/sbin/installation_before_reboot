@@ -7,9 +7,11 @@ echo "Enter root password in new system"
 /usr/bin/apt upgrade
 
 /usr/bin/apt install grub-pc linux-image-amd64 firmware-linux firmware-linux-nonfree firmware-misc-nonfree firmware-realtek
-/usr/bin/apt install net-tools wpasupplicant network-manager hdparm psmisc screen vim mc zip unrar
-/usr/bin/cp /usr/local/etc/hdparm.conf /etc/
+/usr/bin/apt install net-tools psmisc screen vim mc zip unrar
 
 /usr/sbin/grub-install ${GRUB_DEVICE}
 /usr/sbin/update-grub
+
+exit 0
+#/usr/bin/apt install net-tools wpasupplicant network-manager hdparm psmisc screen vim mc zip unrar
 

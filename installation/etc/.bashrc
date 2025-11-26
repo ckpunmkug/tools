@@ -1,6 +1,9 @@
 ## allow Ctrl+s pressing
 /bin/stty start ^- ; /bin/stty stop ^-
 
+## Copy (remove) files named starting with dot
+shopt -s dotglob
+
 ## set creation access mode -rw-r--r--  and drwxr-xr-x 
 umask 022
 
@@ -28,7 +31,8 @@ alias ssh='ssh -o ServerAliveInterval=5'
 alias sftp='sftp -o ServerAliveInterval=5'
 alias mc='mc -d'
 alias dir='dir -a -b -1 --group-directories-first -p -l -h --time-style=iso'
+alias date='/usr/bin/date +"%g-%m-%d_%H:%M"'
+alias pkg-list="dpkg-query  -f='\${binary:Package} - \${binary:Synopsis}\n' -W"
 
-## like kali prompt but more modest
-export PS1="\n┌┤ \u \w \n└─ "
+export PS1="\n\u \h \w \n> "
 
