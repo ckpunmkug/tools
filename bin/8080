@@ -1,0 +1,165 @@
+#!/bin/sh
+#<?php ob_end_clean(); goto start; ?>
+
+HOST="127.0.0.1"
+PORT="8080"
+
+# Initialization block
+#{{{
+
+FILE=`/usr/bin/realpath $0`
+DIR=`/usr/bin/dirname ${FILE}`
+BASENAME=`basename ${FILE}`
+
+HELP="
+Description: The script starts the php built-in web server with authorization.
+Usage: ${BASENAME} [user] <docroot>
+"
+
+if test "${1}" = "-h" -o "${1}" = "--help"
+then
+	/usr/bin/echo "${HELP}"
+	exit 0
+fi
+
+#}}}
+
+# Echo functions
+#{{{
+
+error ()
+{
+	/usr/bin/echo "Error: ${BASENAME} - ${1}" >&2
+	return 255
+}
+
+notice ()
+{
+	/usr/bin/echo "${BASENAME} - ${1}"
+	return 0
+}
+
+#}}}
+
+# Change user
+#{{{
+
+UID=`/usr/bin/id -r -u`
+GID=`/usr/bin/id -r -g`
+
+if test $UID -eq 0 -o $GID -eq 0
+then
+	if test -z "${1}"
+	then
+		error "The argument 'user' not passsed in command line"
+		exit 255
+	fi
+	
+	if test -z "${2}"
+	then
+		error "The argument 'docroot' not passsed in command line"
+		exit 255
+	fi
+	
+	/usr/bin/su -P -s /bin/sh -l "${1}" -c "${FILE} ${2}"
+	exit 0
+else	
+	if test -z "${1}"
+	then
+		error "The argument 'docroot' not passsed in command line"
+		exit 255
+	fi
+	export DOCROOT="${1}"
+fi
+
+export USER=`/usr/bin/whoami`
+export PASSWORD=`/usr/bin/apg -n 1 -m 6 -x 6 -M NCL`
+
+#}}}
+
+# Echo info
+#{{{
+
+TEXT="
+User: ${USER}
+Password: ${PASSWORD}
+Docroot: ${DOCROOT}
+"
+/usr/bin/echo "${TEXT}"
+
+#}}}
+
+/usr/bin/php -d "auto_prepend_file=${FILE}" -t "${DOCROOT}" -S "${HOST}:${PORT}"
+exit $?
+
+<?php start:
+
+// Authorization block 
+//{{{
+
+$return = getenv('USER', true);
+if(!is_string($return)) {
+	trigger_error("Environment variable 'USER' is not set", E_USER_ERROR);
+	exit(255);
+}
+$user = $return;
+
+$return = getenv('PASSWORD', true);
+if(!is_string($return)) {
+	trigger_error("Environment variable 'PASSWORD' is not set", E_USER_ERROR);
+	exit(255);
+}
+$password = $return;
+
+$apache_request_headers = apache_request_headers();
+$return = array_key_exists('Authorization', $apache_request_headers);
+if(!$return) {
+	http_response_code(401);
+	header('WWW-Authenticate: Basic realm="Access to the php built-in web server", charset="UTF-8"');
+	exit(0);
+}
+	
+$pattern = '/^([^\s]+)\s+([^\s]+)$/';
+$string = $apache_request_headers['Authorization'];
+$return = preg_match($pattern, $string, $MATCH);
+if ($return !== 1) {
+	trigger_error("Can't parse 'Authorization' header", E_USER_ERROR);
+	exit(255);
+}
+$type = $MATCH[1];
+$credentials = $MATCH[2];
+	
+if (strcmp($type, 'Basic') !== 0) {
+	trigger_error("Type of 'Authorization' is not 'Basic'", E_USER_ERROR);
+	exit(255);
+}
+	
+$return = base64_encode("{$user}:{$password}");
+if(strcmp($return, $credentials) !== 0) {
+	http_response_code(401);
+	header('WWW-Authenticate: Basic realm="Access to the php built-in web server", charset="UTF-8"');
+	exit(0);
+}
+
+unset($return, $user, $password, $apache_request_headers, $pattern, $string, $MATCH, $type, $credentials);
+
+//}}}
+
+// Protection block
+//{{{
+
+if(!(
+	isset($_SERVER["HTTP_SEC_FETCH_SITE"])
+	&& is_string($_SERVER["HTTP_SEC_FETCH_SITE"])
+	&& (
+		$_SERVER["HTTP_SEC_FETCH_SITE"] == 'same-origin'
+		|| $_SERVER["HTTP_SEC_FETCH_SITE"] == 'none'
+	)
+)) {
+	http_response_code(403);
+	trigger_error("Incorrect Sec-Fetch-Site header", E_USER_ERROR);
+	exit(255);
+}
+
+//}}}
+
