@@ -1,0 +1,31 @@
+#!/bin/bash
+
+HASH=''
+
+while test -z "${HASH}"
+	do
+	
+	PASSWORD1=$(whiptail --passwordbox "Enter password" 8 20 3>&1 1>&2 2>&3)
+	if test ${?} -ne 0
+		then
+		exit 0
+		fi
+		
+	PASSWORD2=$(whiptail --passwordbox "Confirm password" 8 20 3>&1 1>&2 2>&3)
+	if test ${?} -ne 0
+		then
+		exit 0
+		fi
+	
+	if test "${PASSWORD1}" = "${PASSWORD2}"
+		then
+		
+		HASH=`/usr/bin/echo -n "${PASSWORD1}" | /usr/bin/md5sum - | /usr/bin/grep -P '[\d\w]+' -o`
+		whiptail --title 'MD5 Sum' --nocancel --msgbox "${HASH}" 7 36
+		exit 0
+		
+		fi
+		
+	whiptail --msgbox "The passwords don't match" 7 29
+	
+	done
