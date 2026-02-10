@@ -1,2 +1,2 @@
-mplayer https://silverrain.hostingradio.ru/silver128.mp3
+mplayer -volume 60 https://silverrain.hostingradio.ru/silver128.mp3
 

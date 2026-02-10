@@ -1,0 +1,15 @@
+#!/bin/sh
+
+date +"%g-%m-%d_%H:%M" > /var/log/apt/update.log
+
+export DEBIAN_FRONTEND=noninteractive
+export APT_LISTCHANGES_FRONTEND=none
+apt-get update -q >> /var/log/apt/update.log
+apt upgrade -q -y -o Dpkg::Options::='--force-confdef' -o Dpkg::Options::='--force-confold' -o Dpkg::Use-Pty=0 >> /var/log/apt/update.log
+
+if test -f /var/run/reboot-required.pkgs
+        then
+        wall "The reboot will occur in 30 seconds."
+        sleep 30
+        reboot
+        fi
