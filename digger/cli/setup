@@ -1,0 +1,13 @@
+#!/usr/bin/php
+<?php
+
+$return = realpath(__DIR__.'/..');
+define('DIR', $return);
+
+set_include_path(DIR.'/include');
+require(DIR.'/docroot/config.php');
+require('block/initialization.php');
+require('component/setup.php');
+
+main($argv);
+

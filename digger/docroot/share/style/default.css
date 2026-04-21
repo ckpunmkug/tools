@@ -1,0 +1,28 @@
+body {
+	margin: 0px;
+	padding: 0px;
+	font-family: Sans;
+	font-size: 16px;
+}
+code {
+	font-family: Monospace;
+	font-size: 16px;
+}
+input {
+	font-family: Sans;
+	font-size: 16px;
+}
+button {
+	margin: 1px;
+	font-family: Sans;
+	font-size: 16px;
+}
+a {
+	text-decoration: none;
+	color: black;
+}
+textarea {
+	font-family: Monospace;
+	font-size: 16px;
+}
+

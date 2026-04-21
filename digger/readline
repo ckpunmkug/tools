@@ -1,0 +1,30 @@
+#!/bin/sh
+#<?= "\r"; goto start; ?>
+FILE=`/usr/bin/realpath $0`
+while true
+	do
+	php -d auto_prepend_file=${FILE} -a
+	done
+<?php start:
+
+if(PHP_SAPI != 'cli') {
+	trigger_error("'PHP_SAPI' is not 'cli'", E_USER_ERROR);
+	exit(255);
+}
+
+function cd(int &$cd, $key = '') // countdown
+{
+	if(!(defined('VERBOSE') && VERBOSE)) return(true);
+	
+	$cd -= 1; 
+	if($key !== '') $key = strval($key).' ';
+	
+	$string = sprintf("\r%05d {$key}", $cd);
+	echo($string);
+	
+	if($cd == 0) echo("\n");
+}
+
+set_include_path(__DIR__.'/include');
+require('block/initialization.php');
+
