@@ -1,0 +1,77 @@
+@font-face {
+	font-family: 'terminus';
+	src: url('../font/terminus.ttf');	
+}
+::selection {
+	all: unset;
+	background: #3584E4;
+	color: #FFF;	
+}
+body {
+	all: unset;
+	font-family: 'terminus';
+	font-size: 20px;
+	font-weight: normal;
+	line-height: 20px;
+	background-color: #000;
+	color: #AAA;
+	caret-color: #FFF;
+}
+a {
+	all: unset;
+}
+a:hover {
+	cursor: pointer;
+}
+input[type="text"] {
+	all: unset;
+	width: 100%;
+}
+input[type="radio"], input[type="checkbox"] {
+	all: unset;
+	display: inline-block;
+	width: 1ch;
+	height: 1ch;
+	border: 2px solid #AAA;
+}
+input[type="radio"]:checked, input[type="checkbox"]:checked {
+	background: #AAA;
+}
+input[type="radio"]:focus, input[type="checkbox"]:focus {
+	border: 2px solid #FFF;
+}
+button {
+	all: unset;
+	background: #444;
+	color: #AAA;
+	padding: 0px 1ch;
+}
+button:hover {
+	cursor: pointer;
+}
+ul {
+	all: unset;
+	display: block;
+	padding-left: 8ch;
+}
+li {
+	all: unset;
+}
+textarea {
+	all: unset;
+	font-family: 'terminus';
+	font-size: 20px;
+	font-weight: normal;
+	line-height: 20px;
+	background-color: #000;
+	color: #AAA;	
+}
+code {
+	all: unset;
+	font-family: 'terminus';
+	font-size: 20px;
+	font-weight: normal;
+	line-height: 20px;
+	background-color: #000;
+	color: #AAA;	
+}
