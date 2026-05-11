@@ -1,0 +1,35 @@
+@font-face {
+	font-family: 'terminus';
+	src: url('../font/terminus.ttf');	
+}
+
+::selection {
+	all: unset;
+	background: #3584E4;
+	color: #FFF;	
+}
+
+body {
+	all: unset;
+	font-family: 'terminus';
+	font-size: 20px;
+	font-weight: normal;
+	line-height: 20px;
+	background-color: #000;
+	color: #AAA;
+	caret-color: #FFF;
+	text-underline-offset: 4px;
+	text-decoration-thickness: 1px;
+}
+
+input[type="text"] {
+	all: unset;
+	color: #AAA;
+	cursor: text;
+}
+
+label {
+	all: unset;
+	cursor: pointer;
+}
+

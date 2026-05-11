@@ -1,0 +1,69 @@
+#window {
+	all: unset;
+	display: grid;
+	grid-template-rows: auto 1fr;
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	min-width: 100%;
+	height: calc(100% - 1lh);
+}
+#header {
+	all: unset;
+	display: block;
+}
+#main {
+	all: unset;
+	display: flex;
+	overflow: scroll;
+}
+form {
+	all: unset;
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+button {
+	all: unset;
+	display: inline;
+	cursor: pointer;
+}
+textarea {
+	all: unset;
+	tab-size: 8ch;
+	white-space: nowrap;
+	/* resize: none; */
+	resize: vertical;
+	width: 100%;
+	height: 100%;
+	background: black;
+}
+iframe {
+	all: unset;
+	display: block;
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	background: #000;
+	width: 100%;
+	height: 18lh;
+}
+#container {
+	display: flex;
+	.fixed {
+		white-space: nowrap;
+	}
+	.flex {
+		flex: 100%;
+		padding: 0 1ch;
+		input {
+			width: 100%;
+		}
+	}
+}
+#whitespace {
+	all: unset;
+	display: block;
+	background: white;
+	height: 17lh;
+}
