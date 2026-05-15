@@ -1,0 +1,32 @@
+#window {
+	all: unset;
+	display: grid;
+	grid-template-rows: auto 1fr;
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	min-width: 100%;
+	height: 100%;
+}
+#header {
+	all: unset;
+	display: block;
+	height: 24px;
+	padding-top: 2px;
+	padding-left: 1ch;
+	background: #444;
+}
+#main {
+	all: unset;
+	display: flex;
+	overflow: scroll;
+}
+span {
+	all: unset;
+	display: inline-block;
+	width: 5ch;
+	margin-right: 1ch;
+	padding: 0px 4px;
+	border-right: 1px solid #444;
+	text-align: right;
+}

@@ -1,0 +1,5 @@
+span[class="id"] {
+	display: inline-block;
+	width: 4ch;
+	text-align: right;
+}

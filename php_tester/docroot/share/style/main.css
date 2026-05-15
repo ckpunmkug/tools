@@ -29,17 +29,7 @@ b {
 
 a {
 	all: unset;
-	margin: 4px;
-	padding: 3px;
-	line-height: 30px;
-	text-underline-offset: 4px;
-	text-decoration-thickness: 1px;
-	text-decoration: underline;
-	color: #35D;
 	cursor: pointer;
-}
-a:focus {
-	outline: 1px solid #FFF;
 }
 
 h4 {
@@ -109,7 +99,6 @@ input[type="radio"], input[type="checkbox"] {
 	width: 1ch;
 	height: 1ch;
 	border: 2px solid #AAA;
-	cursor: default;
 }
 input[type="radio"]:checked, input[type="checkbox"]:checked {
 	background: #AAA;

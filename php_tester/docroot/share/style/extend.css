@@ -1,0 +1,9 @@
+div[class="output"] {
+	all: unset;
+	display: block;
+	padding: 1ch 0;
+	white-space: nowrap;
+}
+a[class="viewer"] {
+	color: #DDD;
+}

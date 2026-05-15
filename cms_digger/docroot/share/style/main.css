@@ -1,0 +1,64 @@
+@font-face {
+	font-family: 'terminus';
+	src: url('../font/terminus.ttf');	
+}
+::selection {
+	all: unset;
+	background: #3584E4;
+	color: #FFF;	
+}
+body {
+	all: unset;
+	font-family: 'terminus';
+	font-size: 20px;
+	font-weight: normal;
+	line-height: 22px;
+	background-color: #000;
+	color: #AAA;
+	caret-color: #FFF;
+	text-underline-offset: 4px;
+	text-decoration-thickness: 1px;
+}
+button {
+	all: unset;
+	font-family: 'terminus';
+	font-size: 20px;
+	font-weight: normal;
+	line-height: 22px;
+	margin: 4px;
+	padding: 1px 1ch;
+	border: 2px solid #AAA;
+	background: #AAA;
+	color: #000;
+	cursor: pointer;	
+}
+a {
+	all: unset;
+	cursor: pointer;
+}
+button:focus {
+	border: 2px solid #FFF;
+}
+label {
+	all: unset;
+	display: inline;
+	margin: 4px 0px;
+	color: #AAA;
+	cursor: pointer;
+}
+input[type="text"] {
+	all: unset;
+	color: #AAA;
+	cursor: text;
+}
+ul {
+	all: unset;
+	display: block;
+	padding-left: 8ch;
+	cursor: text;
+}
+li {
+	all: unset;
+	display: block;
+}
+

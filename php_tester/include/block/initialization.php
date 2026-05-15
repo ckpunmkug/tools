@@ -14,7 +14,11 @@ define('HOME', $return);
 
 require('project/config.php');
 
-require('class/FileSystem.php');
-require('class/SQLite.php');
 require('class/Check.php');
+require('class/FileSystem.php');
+require('function/launch.php');
+require('function/encode.php');
+require('function/decode.php');
+
+require('class/PHPDebugger.php');
 

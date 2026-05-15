@@ -1,0 +1,11 @@
+span[class="pattern"] {
+	color: #888;
+	cursor: default;
+}
+span[class="status"] {
+	color: #CCC;
+	cursor: pointer;
+}
+#root {
+	padding: 0;
+}

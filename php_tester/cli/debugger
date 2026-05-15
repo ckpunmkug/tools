@@ -1,0 +1,33 @@
+#!/usr/bin/php
+<?php
+
+define('VERBOSE', false);
+
+$realpath = realpath(__DIR__.'/..');
+if(!is_string($realpath)) {
+	trigger_error("Unable to get real path of project root folder", E_USER_ERROR);
+	exit(255);
+}
+define('DIR', $realpath);
+
+set_include_path(DIR.'/include');
+require('block/initialization.php');
+
+foreach(['source', 'commands'] as $key) {
+	$return = FileSystem::is_file_rwx(PATH[$key], true, true, false);
+	if(!$return) {
+		trigger_error("Incorrect '{$key}' file", E_USER_ERROR);
+		exit(255);
+	}
+}
+
+require('project/Method.php');
+require('project/main.php');
+
+$return = main($argv);
+if(!$return) {
+	trigger_error("'main' call failed", E_USER_ERROR);
+	exit(255);
+}
+exit(0);
+

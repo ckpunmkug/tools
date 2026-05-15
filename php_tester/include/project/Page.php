@@ -1,0 +1,159 @@
+<?php
+
+class Page
+{
+	static function index()
+	{//{{{//
+		
+		$_ = [
+			"coverage" => URL_PATH.'?page=coverage',
+			"debugger" => URL_PATH.'?page=debugger',
+			"source" => URL["text_editor"].'?path='.urlencode(PATH["source"]),
+			"commands" => URL["text_editor"].'?path='.urlencode(PATH["commands"]),
+		];
+		
+		$body = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+<a href="{$_['coverage']}" accesskey="1"><u>1</u> coverage</a><br />
+<a href="{$_['debugger']}" accesskey="2"><u>2</u> debugger</a><br />
+<a href="{$_['source']}" accesskey="3"><u>3</u> edit source</a><br />
+<a href="{$_['commands']}" accesskey="4"><u>4</u> edit commands</a><br />
+
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		
+		HTML::$title = 'index';
+		HTML::$styles = [
+			'share/style/main.css',
+		];
+		HTML::$body = $body;
+		HTML::echo();
+		
+		return(true);
+		
+	}//}}}//
+	
+	static function coverage()
+	{//{{{//
+	
+		$ENVIRONMENT = [
+			"PHP_INI_SCAN_DIR" => PATH["php_ini"],
+		];
+	
+		$command = BIN["php"].' '.PATH["source"];
+		$return = launch($command, 10, $ENVIRONMENT);
+		if(!is_array($return)) {
+			trigger_error("Can't launch 'php' with 'start.php'", E_USER_WARNING);
+			return(false);
+		}
+		$status = $return["status"];
+		$stdout = $return["stdout"];
+		$stderr = $return["stderr"];
+		
+		$return = Method::get_u80_data($stderr);
+		if(!is_array($return)) {
+			trigger_error("Can't get 'u80' data", E_USER_WARNING);
+			return(false);
+		}
+		
+		$u80_data = $return["data"];
+		$stderr = $return["text"];
+		
+		$return = Method::u80_data_to_html($u80_data);
+		$headers = $return["headers"];
+		$code_coverage = $return["code_coverage"];
+		
+		$status = strval($status);
+		$stderr = t2h($stderr, true);
+		$stdout = t2h($stdout, true);
+		
+		$body = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+<h4>headers</h4>
+<div class="output">{$headers}</div>
+
+<h4>code coverage</h4>
+<div class="output" style="white-space: wrap;">{$code_coverage}</div>
+
+<h4>status</h4>
+<div class="output">{$status}</div>
+
+<h4>stderr</h4>
+<div class="output">{$stderr}</div>
+
+<h4>stdout</h4>
+<div class="output">{$stdout}</div>
+
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		
+		HTML::$title = "coverage";
+		HTML::$styles = [
+			'share/style/main.css',
+			'share/style/extend.css',
+		];
+		HTML::$body = $body;
+		HTML::echo();
+		
+		return(true);
+			
+	}//}}}//
+
+	static function debugger()
+	{//{{{//
+		
+		$return = file_get_contents(PATH["commands"]);
+		if(!is_string($return)) {
+			if(defined('DEBUG') && DEBUG) var_dump(['PATH["commands"]' => PATH["commands"]]);
+			trigger_error("Can't get contents of 'commands' file", E_USER_WARNING);
+			return(false);
+		}
+		$COMMAND = explode("\n", $return);
+		
+		$debugger = new PHPDebugger(PATH["source"], PATH["cms"], NULL, 10, false);
+		
+		$output = '';
+		foreach($COMMAND as $command) {
+			$command = trim($command);
+			if(substr($command, 0, 1) == '#') continue;
+			$output .= "> {$command}\n";
+			
+			$return = $debugger->send($command);
+			$output .= $return;
+			if(strpos($return, '[Script ended normally]') !== false) break;
+			
+			if($command == 'quit' || $command == 'q') break;
+		}
+		
+		$return = Method::get_u80_data($output);
+		
+		$html = Method::u80_data_to_html($return["data"]);
+		
+		$html["text"] = Method::output_to_html($return["text"]);
+		
+		$body = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+<h4>headers</h4>
+<div class="output">{$html["headers"]}</div>
+
+<h4>output</h4>
+<div class="output">{$html["text"]}</div>
+
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		
+		HTML::$title = "debugger";
+		HTML::$styles = [
+			'share/style/main.css',
+			'share/style/extend.css',
+		];
+		HTML::$body = $body;
+		HTML::echo();
+		
+		return(true);
+		
+	}//}}}//
+}

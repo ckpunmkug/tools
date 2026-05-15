@@ -20,11 +20,10 @@ require('class/HTML.php');
 require('function/t2h.php');
 require('function/layout_form.php');
 
-require('data/class.php');
-if(file_exists(PATH["database"])) {
-	$return = Database::open(PATH["database"]);
+foreach(['source', 'commands'] as $key) {
+	$return = FileSystem::is_file_rwx(PATH[$key], true, true, false);
 	if(!$return) {
-		trigger_error("Can't open database from file", E_USER_ERROR);
+		trigger_error("Incorrect '{$key}' file", E_USER_ERROR);
 		exit(255);
 	}
 }
