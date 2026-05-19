@@ -12,6 +12,16 @@ class Page
 		if(!eval(Check::$string.='$_GET["path"]')) return(false);
 		$path = $_GET["path"];
 		
+		$pattern = '/^(.+):([0-9]+)$/';
+		$return = preg_match($pattern, $path, $MATCH);
+		if($return == 1) {
+			$_ = [
+				"location" => URL_PATH.'?path='.urlencode($MATCH[1])."#{$MATCH[2]}",
+			];
+			header("Location: {$_['location']}");
+			return(true);
+		}
+		
 		$return = FileSystem::is_file_rwx($path, true, false, false);
 		if(!$return) {
 			trigger_error("Incorrect passed 'path'", E_USER_WARNING);

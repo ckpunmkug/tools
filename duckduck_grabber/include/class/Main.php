@@ -131,7 +131,7 @@ class Main
 	static function define_CSRF_TOKEN()
 	{//{{{//
 		
-		$lifetime = 86400;
+		$lifetime = 3600*4;
 		
 		session_set_cookie_params([
 			'lifetime' => $lifetime,
@@ -142,7 +142,7 @@ class Main
 			'samesite' => 'Strict'
 		]);
 		session_start(['gc_maxlifetime' => $lifetime]);
-		
+
 		if(!(
 			isset($_SESSION["csrf_token"]) 
 			&& is_string($_SESSION["csrf_token"])

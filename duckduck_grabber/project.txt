@@ -1,0 +1,126 @@
+data
+{//{{{//
+	
+	SEARCH_QUERY
+		parent
+		text
+		url
+		level
+		complete
+	DUCKDUCKGO_RESULT
+		query
+		url
+		title
+		description
+	
+	browser
+	IN
+		query
+}//}}}//
+
+browser
+{//{{{//
+	
+	capture server tab
+	capture duckduckgo tab
+	start script
+	get query
+	execute parser
+	send result
+	stop script
+	pause
+	repeat
+	
+}//}}}//
+
+extension
+{//{{{//
+	
+	commands
+		capture_server_tab
+		capture_duckduckgo_tab
+		start
+		stop
+	
+	start:
+		get_search_query_from_server_tab
+		send_search_query_in_duckduckgo_tab
+		wait_loading_complete
+		parse_duckduckgo_results
+		send_parsed_results_to_server
+		if stop == true exit
+		random_pause
+		goto start
+	
+	start stop
+	OUT
+		query
+		TITLE
+		DESCRIPTION
+		RELATED_SEARCHES
+	
+
+}//}}}//
+
+frontend
+{//{{{//
+	
+	
+}//}}}//
+
+server
+{//{{{//
+	
+	pages
+		index 
+			state
+			database - created / does not exist
+			tables - created / does not exist
+			root search query - present / absent
+			
+			create database
+			clear database
+			add root search query
+		working
+			unprocessed query
+			parsed duckduckgo results
+		statistics
+			search queries
+				total 0
+				complete 0
+				unprocessed 0
+				levels 1 - 0 , 2 - 0, 3 - 0 ... N - 0	
+		list
+			state
+			text
+			level
+	actions
+		get_unprocessed_query
+		put_parsed_duckduckgo_results
+		create_database
+		clear_database
+		add_root_search_query
+}//}}}//
+
+draft
+{//{{{//
+	
+GET /?q=what%20does%20viagra%20treat&t=ftsa HTTP/2
+Host: duckduckgo.com
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Encoding: gzip, deflate, br, zstd
+Referer: https://duckduckgo.com/
+DNT: 1
+Sec-GPC: 1
+Connection: keep-alive
+Upgrade-Insecure-Requests: 1
+Sec-Fetch-Dest: document
+Sec-Fetch-Mode: navigate
+Sec-Fetch-Site: same-origin
+Sec-Fetch-User: ?1
+Priority: u=0, i
+TE: trailers
+		
+}//}}}//
+

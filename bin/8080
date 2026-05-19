@@ -92,7 +92,7 @@ Docroot: ${DOCROOT}
 /usr/bin/php -d "auto_prepend_file=${FILE}" -t "${DOCROOT}" -S "${HOST}:${PORT}"
 exit $?
 
-<?php start:
+<?php start: file_put_contents('php://stderr', "\n");
 
 // Authorization block 
 //{{{

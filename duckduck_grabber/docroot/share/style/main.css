@@ -1,0 +1,131 @@
+@font-face {
+	font-family: 'terminus';
+	src: url('../font/terminus.ttf');	
+}
+
+::selection {
+	all: unset;
+	background: #3584E4;
+	color: #FFF;	
+}
+
+body {
+	all: unset;
+	font-family: 'terminus';
+	font-size: 20px;
+	font-weight: normal;
+	line-height: 22px;
+	background-color: #000;
+	color: #AAA;
+	caret-color: #FFF;
+	text-underline-offset: 4px;
+	text-decoration-thickness: 1px;
+}
+
+b {
+	all: unset;
+	color: #FFF;	
+}
+
+a {
+	all: unset;
+	margin: 4px;
+	padding: 3px;
+	line-height: 30px;
+	text-underline-offset: 4px;
+	text-decoration-thickness: 1px;
+	text-decoration: underline;
+	color: #35D;
+	cursor: pointer;
+}
+a:focus {
+	outline: 1px solid #FFF;
+}
+
+h4 {
+	all: unset;
+	display: block;
+	line-height: 30px;
+	background: #333;
+	color: #DDD;
+}
+	
+button {
+	all: unset;
+	font-family: 'terminus';
+	font-size: 20px;
+	font-weight: normal;
+	line-height: 22px;
+	margin: 4px;
+	padding: 1px 1ch;
+	border: 2px solid #AAA;
+	background: #AAA;
+	color: #000;
+	cursor: pointer;	
+}
+button:focus {
+	border: 2px solid #FFF;
+}
+
+a[class="button"] {
+	all: unset;
+	font-family: 'terminus';
+	font-size: 20px;
+	font-weight: normal;
+	line-height: 22px;
+	margin: 4px;
+	padding: 2px 1ch;
+	border: 2px solid #AAA;
+	background: #AAA;
+	color: #000;
+	cursor: pointer;	
+}
+a[class="button"]:focus {
+	border: 2px solid #FFF;
+}
+
+label[class="text"] {
+	all: unset;
+	display: block;
+	margin: 4px 0px;
+	color: #CCC;
+	cursor: pointer;
+}
+input[type="text"] {
+	all: unset;
+	width: 100%;
+	color: #AAA;
+	cursor: text;
+}
+a[class="text"] {
+	all: unset;
+	color: #aaa;
+	cursor: pointer;
+}
+
+input[type="radio"], input[type="checkbox"] {
+	all: unset;
+	display: inline-block;
+	width: 1ch;
+	height: 1ch;
+	border: 2px solid #AAA;
+	cursor: default;
+}
+input[type="radio"]:checked, input[type="checkbox"]:checked {
+	background: #AAA;
+}
+input[type="radio"]:focus, input[type="checkbox"]:focus {
+	border: 2px solid #FFF;
+}
+
+ul {
+	all: unset;
+	display: block;
+	padding-left: 8ch;
+	cursor: text;
+}
+li {
+	all: unset;
+	display: block;
+}
+

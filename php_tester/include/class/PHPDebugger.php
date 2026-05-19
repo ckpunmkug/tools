@@ -107,6 +107,7 @@ HEREDOC;
 		
 		$this->send('set quiet on');
 		$this->send('set pagination off');
+		$this->send('set stepping line');
 		
 	}//}}}
 	
