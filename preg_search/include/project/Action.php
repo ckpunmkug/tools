@@ -66,6 +66,8 @@ class Action
 	static function search()
 	{//{{{//
 		
+		//var_dump($_POST); die;
+		
 		if(!eval(Check::$string.='$_SERVER["HTTP_REFERER"]')) return(false);
 		$http_referer = $_SERVER["HTTP_REFERER"];
 		
@@ -81,6 +83,11 @@ class Action
 		if(!eval(Check::$string.='$_POST["id"]')) return(false);
 		$parent = intval($_POST["id"]);
 		
+		$tokens = false;
+		if(isset($_POST["tokens"]) && $_POST["tokens"] == '1') {
+			$tokens = true;
+		}
+		
 		$return = FileSystem::get_dir_contents($path);
 		if(!is_array($return)) {
 			trigger_error("Can't get dir contents", E_USER_WARNING);
@@ -95,10 +102,19 @@ class Action
 		}
 		$PATH = $return;
 		
-		$return = Method::find_lines($PATH, $pattern);
-		if(!is_array($return)) {
-			trigger_error("Can't find lines in files", E_USER_WARNING);
-			return(false);
+		if($tokens) {
+			$return = Method::find_lines_by_tokens($PATH, $pattern);
+			if(!is_array($return)) {
+				trigger_error("Can't find lines in files", E_USER_WARNING);
+				return(false);
+			}
+		}
+		else {
+			$return = Method::find_lines($PATH, $pattern);
+			if(!is_array($return)) {
+				trigger_error("Can't find lines in files", E_USER_WARNING);
+				return(false);
+			}
 		}
 		$SEARCH_RESULT = $return;
 			

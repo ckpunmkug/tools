@@ -21,12 +21,6 @@ function main()
 			define("PURGE", true);
 		}, false
 	]);
-	ArgV::add([
-		"", "--debugger", NULL, "Run phpdbg with test source",
-		function () {
-			define("DEBUGGER", true);
-		}, false
-	]);
 	ArgV::apply();
 	
 	if(defined('TEST')) {
@@ -39,11 +33,12 @@ function main()
 	}
 	
 	if(defined('SETUP')) {
-		$return = Method::setup();
+		$return = Setup::database();
 		if(!$return) {
-			trigger_error("Can't setup", E_USER_WARNING);
+			trigger_error("Can't setup database", E_USER_WARNING);
 			return(false);
 		}
+		
 		echo("\nSetup complete\n");
 		return(true);
 	}
@@ -58,21 +53,11 @@ function main()
 		return(true);
 	}
 	
-	if(defined('DEBUGGER')) {
-		$return = Method::cli_debugger();
-		if(!$return) {
-			trigger_error("Can't run debugger", E_USER_WARNING);
-			return(false);
-		}
-		return(true);
-	}
-	
-	$PHP_keys = ["source", "commands"];
 	if(defined('VERBOSE') && VERBOSE) {
-		$return = Project::is_setup($PHP_keys);
+		$return = Method::is_setup();
 	}
 	else {
-		$return = @Project::is_setup($PHP_keys);
+		$return = @Method::is_setup();
 	}
 	if($return) {
 		echo("\nProject '".PROJECT."' ready for work\n");

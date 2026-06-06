@@ -1,0 +1,15 @@
+#!/usr/bin/php
+<?php
+
+$random_string_length = 4;
+$chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+$last_char_position = strlen($chars)-1;
+$random_string = '';
+
+for ($i = 0; $i < $random_string_length; $i++) {
+	$position = rand(0, $last_char_position);
+	$random_string .= substr($chars, $position, 1);
+}
+	
+echo("{$random_string}\n");
+

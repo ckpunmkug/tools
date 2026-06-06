@@ -1,0 +1,134 @@
+#!/usr/bin/php
+<?php
+declare(ticks = 1);
+
+define("MUSIC_START", 31);
+define("MUSIC_FINISH", 3602);
+
+function interrupt_signal_handler()
+{
+	exit(255);
+}
+pcntl_signal(SIGINT, "interrupt_signal_handler");
+
+
+if(@is_string($argv[0]) !== true) {
+	trigger_error('Incorrect $argv[0] string', E_USER_ERROR);
+	exit(255);
+}
+
+$return = dirname($argv[0]);
+if(!is_string($return)) {
+	trigger_error("Can't get music dir", E_USER_ERROR);
+	exit(255);
+}
+
+$return = realpath($return);
+if(!is_string($return)) {
+	trigger_error("Can't get real path for music dir ", E_USER_ERROR);
+	exit(255);
+}
+define('MUSIC_DIR', $return);
+
+class Player
+{
+	var $playlist_path = MUSIC_DIR.'/playlist.json';
+	var $start = 0;
+	var $position = [
+		"offset" => MUSIC_START,
+		"index" => 0,
+	];
+	var $FILE = [];
+	
+	function __construct()
+	{
+		$return = file_exists($this->playlist_path);
+		if(!$return) {
+			$return = scandir(MUSIC_DIR);
+			if(!is_array($return)) {
+				trigger_error("Can't scan music dir", E_USER_ERROR);
+				exit(255);
+			}
+			$NAME = $return;
+			
+			foreach($NAME as $name) {
+				$path = MUSIC_DIR."/{$name}";
+				
+				if(!is_file($path)) continue;
+				if(preg_match('/^.+\.mp3$/', $name) !== 1) continue;
+				
+				array_push($this->FILE, $path);
+			}
+			$this->save();
+		}
+		$this->load();
+	}
+	
+	function __destruct()
+	{
+		$this->save();
+	}
+	
+	function save()
+	{
+		$time = time();
+		$this->position["offset"] += $time - $this->start;
+		
+		$array = [
+			"position" => $this->position,
+			"FILE" => $this->FILE,
+		];
+		$json = json_encode($array, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+		if(!is_string($json)) {
+			trigger_error("Can't encode json", E_USER_ERROR);
+			exit(255);
+		}
+		
+		$return = file_put_contents($this->playlist_path, $json);
+		if(!is_int($return)) {
+			trigger_error("Can't put json to playlist file", E_USER_ERROR);
+			exit(255);
+		}
+	}
+	
+	function load()
+	{
+		$return = file_get_contents($this->playlist_path);
+		if(!is_string($return)) {
+			trigger_error("Can't get json playlist from file", E_USER_ERROR);
+			exit(255);
+		}
+		
+		$array = json_decode($return, true);
+		if(!is_array($array)) {
+			trigger_error("Can't decode json", E_USER_ERROR);
+			exit(255);
+		}
+		
+		$this->position = $array["position"];
+		$this->FILE = $array["FILE"];
+	}
+	
+	function play()
+	{
+		$index = $this->position["index"];
+		$file = escapeshellarg($this->FILE[$index]);
+		$offset = strval($this->position["offset"]);
+		$this->start = time();
+		
+		$command = "mplayer -msglevel all=-1 -ss {$offset} {$file}";
+		system($command);
+	}
+}
+
+
+$Player = new Player();
+while(true) {
+	$Player->play();
+	$Player->position["index"] += 1;
+	if($Player->position["index"] == count($Player->FILE)) {
+		$Player->position["index"] = 0;
+	}
+	$Player->position["offset"] = MUSIC_START;
+}
+

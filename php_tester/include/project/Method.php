@@ -2,34 +2,126 @@
 
 class Method
 {
+	static function setup()
+	{//{{{//
+		
+		$PATH = [
+			"u80" => DIR.'/include/class/u80.php',
+			"GLOBALS" => DIR.'/include/block/GLOBALS.php',
+			"DOCUMENT_ROOT" => PATH["cms"],
+		];
+		
+		$contents = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+<?php
+
+define("\\xC2\\x80", 'path_to_coverage_source');
+require('{$PATH["u80"]}');
+require('{$PATH["GLOBALS"]}');
+
+\${"\\xC2\\x80"} = [
+	"shell" => '/tmp/shell.php',
+	"host" => 'localhost',
+	"script" => '/index.php',
+];
+file_put_contents(\${"\\xC2\\x80"}["shell"], '<?php phpinfo();');
+chdir('{$PATH["DOCUMENT_ROOT"]}');
+
+\$_SERVER["HTTP_HOST"] = \${"\\xC2\\x80"}["host"];
+\$_SERVER["SERVER_NAME"] = \${"\\xC2\\x80"}["host"];
+\$_SERVER["DOCUMENT_ROOT"] = '{$PATH["DOCUMENT_ROOT"]}';
+\$_SERVER["SCRIPT_FILENAME"] = '{$PATH["DOCUMENT_ROOT"]}'.\${"\\xC2\\x80"}["script"];
+\$_SERVER["REQUEST_METHOD"] = 'GET';
+\$_SERVER["QUERY_STRING"] = ''; // abcd=xyz&qwerty=123456
+\$_SERVER["PHP_SELF"] = \${"\\xC2\\x80"}["script"];
+\$_SERVER["SCRIPT_NAME"] = \${"\\xC2\\x80"}["script"];
+\$_SERVER["REQUEST_URI"] = \${"\\xC2\\x80"}["script"];
+
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+
+		$return = Project::setup_file(PATH["source"], $contents);
+		if(!$return) {
+			trigger_error("Can't setup 'source", E_USER_WARNING);
+			return(false);
+		}
+		
+		$contents = 
+///////////////////////////////////////////////////////////////{{{//
+<<<'HEREDOC'
+break /var/www/html/index.php:3
+run
+break del 0
+ev var_dump($_SERVER);
+step
+#readline
+continue
+quit
+
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		
+		$return = Project::setup_file(PATH["commands"], $contents);
+		if(!$return) {
+			trigger_error("Can't setup 'commands'", E_USER_WARNING);
+			return(false);
+		}
+		
+		return(true);
+		
+	}//}}}//
+	
+	static function purge()
+	{//{{{//
+		
+		$return = Project::purge_file(PATH["source"], 2);
+		if(!$return) {
+			trigger_error("Can't purge 'source'", E_USER_WARNING);
+			return(false);
+		}
+		
+		$return = Project::purge_file(PATH["commands"], 2);
+		if(!$return) {
+			trigger_error("Can't purge 'commands'", E_USER_WARNING);
+			return(false);
+		}
+		
+		return(true);
+		
+	}//}}}//
+	
 	static function get_u80_data(string $string)
 	{//{{{//
 		
 		$length = strlen($string);
-		$data = [];
-		$text = '';
 		$u80 = false;
 		$buffer = '';
+		$text = '';
+		$data = [];
 		for($offset = 0; $offset < $length; $offset += 1) {
 			
 			$char = substr($string, $offset, 1);
-			if($char != "\x80") {
+			
+			if($char == "\x02") {
+				$u80 = true;
+				$buffer = '';
+				continue;
+			}
+			if($char == "\x03") {
+				$u80 = false;
+				array_push($data, $buffer);
+				continue;
+			}
+		
+			if($u80) {
 				$buffer .= $char;
 			}
 			else {
-				if($u80) {
-					$u80 = false;
-					array_push($data, $buffer);
-				}
-				else {
-					$u80 = true;
-					$text .= $buffer;
-				}
-				$buffer = '';
+				$text .= $char;
 			}
-			
+						
 		}// for($offset = 0; $offset < $length; $offset += 1)
-		$text .= $buffer;
 		
 		$ARRAY = [];
 		foreach($data as $json) {
@@ -50,8 +142,10 @@ class Method
 		
 	}//}}}//
 
-	static function u80_data_to_html(array $data)
+	static function u80_data_to_html(array $data, string $file = NULL, int $from = NULL, int $to = NULL)
 	{//{{{//
+	
+		$filter = $file;
 		
 		$http_header_to_html = function(array $item)
 		{//{{{//
@@ -72,12 +166,12 @@ HEREDOC;
 			
 		};//}}}//
 		
-		$code_coverage_to_html = function(array $item)
+		$code_coverage_to_html = function(string $file, array $LINE)
 		{//{{{//
 			
-			$href = URL["source_viewer"].'?path='.urlencode($item["file"]);
+			$href = URL["source_viewer"].'?path='.urlencode($file);
 			$_ = [
-				"text" => t2h($item["file"]),
+				"text" => htmlentities($file),
 			];
 			$html = 
 ///////////////////////////////////////////////////////////////
@@ -86,7 +180,7 @@ HEREDOC;
 
 HEREDOC;
 ///////////////////////////////////////////////////////////////
-			foreach($item["lines"] as $number) {
+			foreach($LINE as $number => $flag) {
 				if(!eval(Check::$int.='$number')) return(false);
 				$number = strval($number);
 				$_ = [
@@ -117,7 +211,28 @@ HEREDOC;
 			}
 			
 			if($type == 'code_coverage') {
-				$code_coverage .= $code_coverage_to_html($item);
+				$ITEM = $item["array"];
+				foreach($ITEM as $file => $LINE) {
+					if(
+						$filter !== NULL
+						&& $filter != $file
+					) continue;
+					
+					if(
+						$from !== NULL
+						&& $to !== NULL
+					) {
+						$result = [];
+						foreach($LINE as $number => $flag) {
+							if($number >= $from && $number <= $to) {
+								$result[$number] = $flag;
+							}
+						}
+						$LINE = $result;
+					}
+					
+					$code_coverage .= $code_coverage_to_html($file, $LINE);
+				}
 				continue;
 			}
 			
@@ -199,22 +314,51 @@ HEREDOC;
 		
 	}//}}}//
 	
-	static function debug_from_stdin(object $debugger)
+	static function cli_debugger()
 	{//{{{//
 		
-		while(true) {
-			echo("\n");
-			$command = readline('> ');
+		$return = file_get_contents(PATH["commands"]);
+		if(!is_string($return)) {
+			if(defined('DEBUG') && DEBUG) var_dump(['PATH["commands"]' => PATH["commands"]]);
+			trigger_error("Can't get contents of 'commands' file", E_USER_WARNING);
+			return(false);
+		}
+		$COMMAND = explode("\n", $return);
+		
+		$debugger = new PHPDebugger(PATH["source"], PATH["cms"], NULL, 10, false);
+		
+		foreach($COMMAND as $command) {
 			$command = trim($command);
 			
-			if($command == 'exit') return(true);
+			if($command == '#readline') {
+				while(true) {
+					echo("\n");
+					$command = readline('> ');
+					$command = trim($command);
+					
+					if($command == 'exit') return(true);
+					
+					$output = $debugger->send($command);
+					echo($output);
+					
+					if(strpos($output, '[Script ended normally]') !== false) return(true);
+					if($command == 'quit' || $command == 'q') return(true);
+				}
+			}
 			
-			$output = $debugger->send($command);
+			if(substr($command, 0, 1) == '#') continue;
+			$output = "> {$command}\n";
+			
+			$return = $debugger->send($command);
+			$output .= $return;
+			
 			echo($output);
 			
-			if(strpos($output, '[Script ended normally]') !== false) exit(0);
-			if($command == 'quit' || $command == 'q') exit(0);
+			if(strpos($return, '[Script ended normally]') !== false) break;
+			if($command == 'quit' || $command == 'q') break;
 		}
+		
+		return(true);
 		
 	}//}}}//
 }

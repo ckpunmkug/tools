@@ -1,6 +1,6 @@
 <?php
 
-function launch(string $command, int $timeout = 30, array $ENVIRONMENT = NULL) // array
+function launch(string $command, int $timeout = 30, array $ENVIRONMENT = []) // array
 {
 	/*
 		$result = [
@@ -23,6 +23,14 @@ function launch(string $command, int $timeout = 30, array $ENVIRONMENT = NULL) /
 		trigger_error("Can't get current working directory", E_USER_WARNING);
 		return(false);
 	}
+	
+	$return = getenv('USER', true);
+	if(is_string($return)) $ENVIRONMENT["USER"] = $return;
+	
+	$return = getenv('HOME', true);
+	if(is_string($return)) $ENVIRONMENT["HOME"] = $return;
+	
+	$ENVIRONMENT["PWD"] = $cwd;
 	
 	$proc = proc_open($command, $std, $PIPE, $cwd, $ENVIRONMENT);
 	if(!is_resource($proc)) {

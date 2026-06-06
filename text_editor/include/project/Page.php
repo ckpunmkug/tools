@@ -87,6 +87,7 @@ HEREDOC;
 		HTML::$styles = [
 			"share/style/main.css",
 			"share/style/editor.css",
+			"share/style/index.css",
 		];
 		HTML::$scripts = [
 			'share/script/editor.js',

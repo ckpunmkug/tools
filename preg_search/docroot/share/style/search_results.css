@@ -3,3 +3,12 @@ span[class="id"] {
 	width: 4ch;
 	text-align: right;
 }
+div[class="empty_appendix"] {
+	height: 24px;
+	/*
+	height: calc(24px - 1px);
+	border-top: 1px solid #1F1F1F;
+	background: #36363A;
+	*/
+}
+

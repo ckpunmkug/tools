@@ -134,6 +134,52 @@ HEREDOC;
 		return($SEARCH_RESULT);
 		
 	}//}}}//
+	
+	static function find_lines_by_tokens(array $PATH, string $constant)
+	{//{{{//
+		
+		$SEARCH_RESULT = [];
+		foreach($PATH as $file) {
+		
+			$return = file_get_contents($file);
+			if(!is_string($return)) {
+				if(defined('DEBUG') && DEBUG) var_dump(['$file' => $file]);
+				trigger_error("Can't get php source file contents", E_USER_WARNING);
+				return(false);
+			}
+			$php_source = $return;
+			$LINE = explode("\n", $php_source);
+			array_unshift($LINE, '');
+			
+			$return = token_get_all($php_source);
+			if(!is_array($return)) {
+				if(defined('DEBUG') && DEBUG) var_dump(['$file_path' => $file_path]);
+				trigger_error("Can't get all tokens from php source", E_USER_WARNING);
+				return(false);
+			}
+			$TOKEN = $return;
+			
+						
+			foreach($TOKEN as $token) {
+				if(!is_array($token)) continue;
+				if(!(
+					isset($token[0])
+					&& $token[0] == constant($constant)
+				)) continue;
+				
+				array_push($SEARCH_RESULT, [
+					"file" => $file,
+					"line" => trim($LINE[$token[2]]),
+					"number" => $token[2],
+				]);
+				
+			}// foreach($TOKEN as $token)
+			
+		}// foreach($PHP_FILE as $file)
+					
+		return($SEARCH_RESULT);
+		
+	}//}}}//
 
 /// setup action ///////////////////////////////////////////////////////////////
 	

@@ -18,5 +18,5 @@ require('class/SQLite.php');
 require('class/Check.php');
 require('function/launch.php');
 
-require('block/import.php');
+//require('block/import.php');
 

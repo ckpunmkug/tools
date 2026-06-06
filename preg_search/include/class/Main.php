@@ -9,6 +9,8 @@ class Main
 		
 		Main::define_CSRF_TOKEN();
 		
+		Main::define_DEBUG();
+		
 		Main::switch_request_method();
 		
 	}//}}}//
@@ -131,7 +133,7 @@ class Main
 	static function define_CSRF_TOKEN()
 	{//{{{//
 		
-		$lifetime = 3600*4;
+		$lifetime = 86400;
 		
 		session_set_cookie_params([
 			'lifetime' => $lifetime,
@@ -142,7 +144,7 @@ class Main
 			'samesite' => 'Strict'
 		]);
 		session_start(['gc_maxlifetime' => $lifetime]);
-
+		
 		if(!(
 			isset($_SESSION["csrf_token"]) 
 			&& is_string($_SESSION["csrf_token"])
@@ -151,6 +153,36 @@ class Main
 			$_SESSION["csrf_token"] = hash('sha256', $string);
 		}
 		define('CSRF_TOKEN', $_SESSION["csrf_token"]);
+		
+		return(NULL);
+		
+	}//}}}//
+
+	static function define_DEBUG()
+	{//{{{//
+		
+		if(!(
+			isset($_SESSION["debug"]) 
+			&& is_string($_SESSION["debug"])
+		)) {
+			$_SESSION["debug"] = "0";
+		}
+		
+		if(
+			isset($_GET["debug"]) 
+			&& is_string($_GET["debug"])
+		) {
+			if($_GET["debug"] == '1') {
+				$_SESSION["debug"] = "1";
+			}
+			if($_GET["debug"] == '0') {
+				$_SESSION["debug"] = "0";
+			}
+		}
+		
+		if($_SESSION["debug"] == '1') {
+			define('DEBUG', true);
+		}
 		
 		return(NULL);
 		

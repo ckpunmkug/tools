@@ -122,6 +122,11 @@ HEREDOC;
 </label>
 
 <label class="text">
+	Search in tokens
+	<input name="tokens" value="1" type="checkbox" />
+</label>
+
+<label class="text">
 	Patterns <u>t</u>ree<br />
 {$tree}
 </label>
@@ -171,7 +176,7 @@ HEREDOC;
 ///////////////////////////////////////////////////////////////{{{//
 <<<HEREDOC
 <div style="white-space: nowrap;">
-	<span class="id">{$id}</span>
+	<!-- <span class="id">{$id}</span> -->
 	<input name="ID[{$index}]" value="{$id}" type="checkbox" tabindex="{$tabindex}" />
 	<a href="{$href}" class="text">{$text}</a>
 </div>
@@ -198,12 +203,26 @@ HEREDOC;
 ///////////////////////////////////////////////////////////////}}}//
 		$form = layout_form(URL_PATH, $form);
 		
+		$body = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+<div id="container">
+	<main>
+{$form}
+	</main>
+	<footer>
+<div class="empty_appendix"></div>
+	</footer>
+	
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		
 		HTML::$title = 'search results';
 		HTML::$styles = [
 			'share/style/main.css',
 			'share/style/search_results.css',
 		];
-		HTML::$body .= $form;
+		HTML::$body .= $body;
 		HTML::echo();
 		
 		return(true);

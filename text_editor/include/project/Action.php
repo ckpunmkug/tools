@@ -59,6 +59,16 @@ HEREDOC;
 		if(!eval(Check::$string.='$_POST["path"]')) return(false);
 		$path = trim($_POST["path"]);
 		
+		$return = file_exists($path);
+		if(!$return) {
+			$return = file_put_contents($path, '');
+			if(!is_int($return)) {
+				if(defined('DEBUG') && DEBUG) var_dump(['$path' => $path]);
+				trigger_error("Can't create empty file", E_USER_WARNING);
+				return(false);
+			}
+		}
+		
 		$return = is_file($path);
 		if(!$return) {
 			if(defined('DEBUG') && DEBUG) var_dump(['$path' => $path]);

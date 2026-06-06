@@ -21,6 +21,8 @@ foreach(['source', 'commands'] as $key) {
 	}
 }
 
+require('class/ArgV.php');
+
 require('project/Method.php');
 require('project/main.php');
 

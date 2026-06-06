@@ -1,6 +1,7 @@
 <?php
 
 define('VERBOSE', false);
+define('DEBUG', true);
 
 $realpath = realpath(__DIR__.'/..');
 if(!is_string($realpath)) {

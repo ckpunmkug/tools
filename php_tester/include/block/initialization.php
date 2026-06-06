@@ -1,5 +1,9 @@
 <?php
 
+define('VENDOR', 'ckpunmkug');
+$return = basename(DIR);
+define('PROJECT', $return);
+
 $return = getenv('HOME', true);
 if(!is_string($return)) {
 	trigger_error("Environment variable 'HOME' is not set", E_USER_ERROR);
@@ -12,13 +16,20 @@ if(!is_string($return)) {
 }
 define('HOME', $return);
 
-require('project/config.php');
+$path = HOME.'/.config/'.VENDOR.'/'.PROJECT.'/config.php';
+$return = file_exists($path);
+if($return) {
+	require($path);
+}
+else {
+	require('project/default.php');
+}
 
 require('class/Check.php');
 require('class/FileSystem.php');
-require('function/launch.php');
 require('function/encode.php');
 require('function/decode.php');
-
+require('function/launch.php');
+require('class/Project.php');
 require('class/PHPDebugger.php');
 

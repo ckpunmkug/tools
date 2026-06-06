@@ -7,3 +7,14 @@ div[class="output"] {
 a[class="viewer"] {
 	color: #DDD;
 }
+form {
+	all: unset;
+	
+	label {
+		all: unset;
+		
+		input[type="text"] {
+			all: unset;
+		}
+	}
+}

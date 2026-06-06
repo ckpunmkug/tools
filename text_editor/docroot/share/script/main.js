@@ -49,6 +49,8 @@ function windowOnLoad(event)
 	let iframe = document.querySelector("iframe");
 	iframe.addEventListener("load", iframeOnLoad.bind(null, div));
 	
+	setInterval(save, 60*1000);
+	
 }//}}}//
 window.addEventListener("load", windowOnLoad);
 
@@ -85,6 +87,7 @@ function windowOnKeydown(event)
 	) {
 		switch(event.key) {
 			case('s'):
+			case('ы'):
 			save();
 			break;
 			

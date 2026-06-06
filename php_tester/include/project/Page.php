@@ -37,6 +37,35 @@ HEREDOC;
 	static function coverage()
 	{//{{{//
 	
+		//var_dump($_GET); die;
+	
+		$file = NULL;
+		if(
+			isset($_GET["file"])
+			&& is_string($_GET["file"])
+			&& strlen($_GET["file"]) > 0
+		) {
+			$file = strval($_GET["file"]);
+		}
+	
+		$from = NULL;
+		if(
+			isset($_GET["from"])
+			&& is_string($_GET["from"])
+			&& strlen($_GET["from"]) > 0
+		) {
+			$from = intval($_GET["from"]);
+		}
+	
+		$to = NULL;
+		if(
+			isset($_GET["to"])
+			&& is_string($_GET["to"])
+			&& strlen($_GET["to"]) > 0
+		) {
+			$to = intval($_GET["to"]);
+		}
+		
 		$ENVIRONMENT = [
 			"PHP_INI_SCAN_DIR" => PATH["php_ini"],
 		];
@@ -60,7 +89,7 @@ HEREDOC;
 		$u80_data = $return["data"];
 		$stderr = $return["text"];
 		
-		$return = Method::u80_data_to_html($u80_data);
+		$return = Method::u80_data_to_html($u80_data, $file, $from, $to);
 		$headers = $return["headers"];
 		$code_coverage = $return["code_coverage"];
 		
@@ -68,9 +97,50 @@ HEREDOC;
 		$stderr = t2h($stderr, true);
 		$stdout = t2h($stdout, true);
 		
+		$url_path = URL_PATH;
+		
+		$_ = [
+			"file" => '',
+			"from" => '',
+			"to" => '',
+		];
+		if(is_string($file)) {
+			$_["file"] = htmlentities($file);
+		}
+		if(is_int($from)) {
+			$_["from"] = strval($from);
+		}
+		if(is_int($to)) {
+			$_["to"] = strval($to);
+		}
+		
+		$form = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+<form action="{$url_path}" method="get">
+	<input name="page" value="coverage" type="hidden" />
+	<label>
+		File
+		<input name="file" value="{$_["file"]}" size="80" type="text" accesskey="f" />
+	</label>
+	<label>
+		From
+		<input name="from" value="{$_["from"]}" size="5" type="text" accesskey="b" />
+	</label>
+	<label>
+		To
+		<input name="to" value="{$_["to"]}" size="5" type="text" accesskey="e" />
+	</label>
+	<button type="submit" accesskey="g">Coverage</button>
+</form>
+
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+		
 		$body = 
 ///////////////////////////////////////////////////////////////{{{//
 <<<HEREDOC
+{$form}
 <h4>headers</h4>
 <div class="output">{$headers}</div>
 

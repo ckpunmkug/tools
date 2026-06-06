@@ -5,11 +5,13 @@ class Page
 	static function index()
 	{//{{{//
 		
+		/*
 		$return = Method::setup();
 		if(!$return) {
 			trigger_error("Can't setup", E_USER_WARNING);
 			return(false);
 		}
+		*/
 		
 		$_ = [
 			"files_list" => URL["files_list"],

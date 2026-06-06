@@ -20,15 +20,6 @@ require('class/HTML.php');
 require('function/t2h.php');
 require('function/layout_form.php');
 
-require('data/class.php');
-if(file_exists(IMPORT["database"])) {
-	$return = Database::open(IMPORT["database"]);
-	if(!$return) {
-		trigger_error("Can't open database from file", E_USER_ERROR);
-		exit(255);
-	}
-}
-
 require('project/Page.php');
 require('project/Action.php');
 require('project/Method.php');

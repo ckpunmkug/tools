@@ -1,6 +1,6 @@
 <?php
 if(PHP_SAPI == 'cli') {
-	::init();
+	::init();
 }
 
 function header(string $string) {
@@ -9,7 +9,7 @@ function header(string $string) {
 		"string" => $string,
 	];
 	$json = json_encode($array, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-	file_put_contents('php://stderr', "\x80{$json}\x80");
+	file_put_contents('php://stderr', "\x02{$json}\x03");
 }
 function is_uploaded_file(string $path) {
         if(is_file($path) && is_readable($path)) return(true);
@@ -21,11 +21,10 @@ function move_uploaded_file(string $source, string $destination) {
 class 
 {
 	private static $class = NULL;
-	private $file = '';
 	
-	public static function init(string $file) {
+	public static function init() {
 		if(self::$class === NULL) {
-			self::$class = new ($file);
+			self::$class = new ();
 			return(true);
 		}
 		trigger_error("Duplicate call x80::init detected", E_USER_ERROR);
@@ -36,9 +35,8 @@ class 
 		if(self::$class === NULL) return(true);
 	}
 	
-	public function __construct(string $file) {
+	public function __construct() {
 		if(::status() === true) {
-			$this->file = $file;
 			return($this->start());
 		}
 		trigger_error("Duplicate declare x80 class detected", E_USER_ERROR);
@@ -55,22 +53,16 @@ class 
 	private function stop() {
 		$code_coverage = xdebug_get_code_coverage();
 		xdebug_stop_code_coverage();
-		
-		if(!key_exists($this->file, $code_coverage)) {
-			trigger_error("{$this->file} not exists in code coverage", E_USER_WARNING);
-			return(false);
-		}
-		$this->print_code_coverage($code_coverage[$this->file]);
+		$this->print_code_coverage($code_coverage);
 	}
 	
-	private function print_code_coverage(array $lines) {
+	private function print_code_coverage(array $code_coverage) {
 		$array = [
 			"type" => 'code_coverage',
-			"file" => $this->file,
-			"lines" => array_keys($lines),
+			"array" => $code_coverage,
 		];
 		$json = json_encode($array, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-		file_put_contents('php://stderr', "\x80{$json}\x80");
+		file_put_contents('php://stderr', "\x02{$json}\x03");
 	}
 }
 
