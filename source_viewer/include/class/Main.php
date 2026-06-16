@@ -5,10 +5,6 @@ class Main
 	function __construct()
 	{//{{{//
 		
-		Main::define_URL_PATH();
-		
-		Main::define_CSRF_TOKEN();
-		
 		Main::switch_request_method();
 		
 	}//}}}//
@@ -101,60 +97,6 @@ class Main
 		return(true);
 		
 	}//}}}
-
-	static function define_URL_PATH()
-	{//{{{//
-		
-		if(@is_string($_SERVER["REQUEST_URI"]) != true) {
-			trigger_error('Incorrect string $_SERVER["REQUEST_URI"]', E_USER_ERROR);
-			exit(255);
-		}
-		
-		$return = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
-		if(!is_string($return)) {
-			trigger_error('Parse url from $_SERVER["REQUEST_URI"] failed', E_USER_ERROR);
-			exit(255);
-		}
-		$URL_PATH = $return;
-		
-		$return = basename($URL_PATH);
-		if($return != 'index.php') {
-			$URL_PATH .= 'index.php';
-		}
-		
-		define('URL_PATH', $URL_PATH);
-		
-		return(NULL);
-
-	}//}}}//
-
-	static function define_CSRF_TOKEN()
-	{//{{{//
-		
-		$lifetime = 3600*4;
-		
-		session_set_cookie_params([
-			'lifetime' => $lifetime,
-			'path' => "/",
-			'domain' => null,
-			'secure' => false,
-			'httponly' => true,
-			'samesite' => 'Strict'
-		]);
-		session_start(['gc_maxlifetime' => $lifetime]);
-
-		if(!(
-			isset($_SESSION["csrf_token"]) 
-			&& is_string($_SESSION["csrf_token"])
-		)) {
-			$string = session_id() . uniqid('', true);
-			$_SESSION["csrf_token"] = hash('sha256', $string);
-		}
-		define('CSRF_TOKEN', $_SESSION["csrf_token"]);
-		
-		return(NULL);
-		
-	}//}}}//
 
 	static function http_response_code_403()
 	{//{{{//

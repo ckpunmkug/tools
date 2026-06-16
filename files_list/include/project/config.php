@@ -2,7 +2,6 @@
 
 define('VENDOR', 'ckpunmkug');
 define('PROJECT', 'preg_search');
-define('DEBUG', true);
 
 define('PATH', [
 	"cms" => HOME.'/www',

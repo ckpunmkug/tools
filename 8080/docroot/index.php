@@ -10,6 +10,7 @@ var_dump([
 	"DEBUG" => defined('DEBUG') ? DEBUG : NULL,
 	"VERBOSE" => defined('VERBOSE') ? VERBOSE : NULL,
 	"QUIET" => defined('QUIET') ? QUIET : NULL,
+	"URL_PATH" => URL_PATH,
 ]);
 
 if(defined('VERBOSE') && VERBOSE) {

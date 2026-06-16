@@ -1,0 +1,121 @@
+<?php
+
+if(!defined('TEST')) die;
+
+if(true) // Create ROOT_NAME_SERVER.json
+{//{{{//
+	
+	// https://www.iana.org/domains/root/servers
+	
+	$ROOT_NAME_SERVER = [
+		[
+			"hostname" => 'a.root-servers.net',
+			"IP_ADRESS" => [
+				"4" => '198.41.0.4',
+				"6" => '2001:503:ba3e::2:30',
+			],
+			"operator" => 'Verisign, Inc.',
+		],
+		[
+			"hostname" => 'b.root-servers.net',
+			"IP_ADRESS" => [
+				"4" => '170.247.170.2',
+				"6" => '2801:1b8:10::b',
+			],
+			"operator" => 'University of Southern California, Information Sciences Institute',	
+		],
+		[
+			"hostname" => 'c.root-servers.net',
+			"IP_ADRESS" => [
+				"4" => '192.33.4.12',
+				"6" => '2001:500:2::c',
+			],
+			"operator" => 'Cogent Communications',	
+		],
+		[
+			"hostname" => 'd.root-servers.net',
+			"IP_ADRESS" => [
+				"4" => '199.7.91.13',
+				"6" => '2001:500:2d::d',
+			],
+			"operator" => 'University of Maryland',	
+		],
+		[
+			"hostname" => 'e.root-servers.net',
+			"IP_ADRESS" => [
+				"4" => '192.203.230.10',
+				"6" => '2001:500:a8::e',
+			],
+			"operator" => 'NASA (Ames Research Center)',	
+		],
+		[
+			"hostname" => 'f.root-servers.net',
+			"IP_ADRESS" => [
+				"4" => '192.5.5.241',
+				"6" => '2001:500:2f::f',
+			],
+			"operator" => 'Internet Systems Consortium, Inc.',	
+		],
+		[
+			"hostname" => 'g.root-servers.net',
+			"IP_ADRESS" => [
+				"4" => '192.112.36.4',
+				"6" => '2001:500:12::d0d',
+			],
+			"operator" => 'US Department of Defense (NIC)',	
+		],
+		[
+			"hostname" => 'h.root-servers.net',
+			"IP_ADRESS" => [
+				"4" => '198.97.190.53',
+				"6" => '2001:500:1::53',
+			],
+			"operator" => 'US Army (Research Lab)',	
+		],
+		[
+			"hostname" => 'i.root-servers.net',
+			"IP_ADRESS" => [
+				"4" => '192.36.148.17',
+				"6" => '2001:7fe::53',
+			],
+			"operator" => 'Netnod',	
+		],
+		[
+			"hostname" => 'j.root-servers.net',
+			"IP_ADRESS" => [
+				"4" => '192.58.128.30',
+				"6" => '2001:503:c27::2:30',
+			],
+			"operator" => 'Verisign, Inc.',	
+		],
+		[
+			"hostname" => 'k.root-servers.net',
+			"IP_ADRESS" => [
+				"4" => '193.0.14.129',
+				"6" => '2001:7fd::1',
+			],
+			"operator" => 'RIPE NCC',	
+		],
+		[
+			"hostname" => 'l.root-servers.net',
+			"IP_ADRESS" => [
+				"4" => '199.7.83.42',
+				"6" => '2001:500:9f::42',
+			],
+			"operator" => 'ICANN',	
+		],
+		[
+			"hostname" => 'm.root-servers.net',
+			"IP_ADRESS" => [
+				"4" => '202.12.27.33',
+				"6" => '2001:dc3::35',
+			],
+			"operator" => 'WIDE Project',	
+		],
+	];
+	
+	$return = export(DIR.'/data/ROOT_NAME_SERVER.json', $ROOT_NAME_SERVER);
+	var_dump($return);
+	
+}//}}}//
+

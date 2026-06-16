@@ -62,8 +62,23 @@ then
 		exit 255
 	fi
 	
-	/usr/bin/su -P -s /bin/sh -l "${1}" -c "${FILE} ${2}"
-	exit 0
+	trap_quit()
+	{
+		kill -15 ${1}
+		wait ${1}
+		/usr/bin/rm --force --recursive --verbose "${2}"
+		exit 0
+	}
+	
+	session_save_path="${SESSIONS}.${1}"
+		
+	/usr/bin/su -P -s /bin/sh -l "${1}" -c "${FILE} ${2}" &
+	
+	trap "trap_quit ${!} ${session_save_path}" QUIT
+	while true
+	do
+		sleep 1
+	done
 else	
 	if test -z "${1}"
 	then
@@ -90,12 +105,12 @@ Docroot: ${DOCROOT}
 
 #}}}
 
-trap_handler()
+trap_quit()
 {
 	/usr/bin/rm --force --recursive --verbose "${session_save_path}"
 	exit $?
 }
-trap 'trap_handler' QUIT
+trap 'trap_quit' QUIT TERM INT
 
 export session_save_path="${SESSIONS}.${USER}"
 if test -d "${session_save_path}"

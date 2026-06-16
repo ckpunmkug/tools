@@ -1,8 +1,5 @@
 <?php
 
-define('VERBOSE', false);
-define('DEBUG', true);
-
 $realpath = realpath(__DIR__.'/..');
 if(!is_string($realpath)) {
 	trigger_error("Unable to get real path of project root folder", E_USER_ERROR);

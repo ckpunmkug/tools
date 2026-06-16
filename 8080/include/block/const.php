@@ -11,6 +11,19 @@ if(!(
 }
 define('CSRF_TOKEN', $_SESSION["csrf_token"]);
 
+/// URL_PATH ///////////////////////////////////////////////////////////////////
+
+if(@is_string($_SERVER["REQUEST_URI"]) != true) {
+	trigger_error('Incorrect string $_SERVER["REQUEST_URI"]', E_USER_ERROR);
+	exit(255);
+}
+$return = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
+if(!is_string($return)) {
+	trigger_error('Parse url from $_SERVER["REQUEST_URI"] failed', E_USER_ERROR);
+	exit(255);
+}
+define('URL_PATH', $return);
+
 /// DEBUG //////////////////////////////////////////////////////////////////////
 
 if(!(
