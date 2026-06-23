@@ -45,7 +45,7 @@ run ()
 
 if test "${1}" = "on"
 then
-	run /usr/sbin/dhclient -v ${eth}
+	run /usr/sbin/dhcpcd ${eth}
 	run /usr/sbin/ifconfig ${eth}
 	run /usr/bin/netstat -a -n -t -u -p
 	exit 0
@@ -53,7 +53,7 @@ fi
 
 if test "${1}" = "off"
 then
-	run /usr/sbin/dhclient -x
+	run /usr/sbin/dhcpcd -x ${eth}
 	run /usr/sbin/ifconfig ${eth}
 	run /usr/bin/netstat -a -n -t -u -p
 	exit 0

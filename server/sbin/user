@@ -5,7 +5,7 @@ DIR=`/usr/bin/dirname ${FILE}`
 BASENAME=`basename ${FILE}`
 
 HELP="
-Description: Create folders for 'ilamp' site.
+Description: Add user to the system with specific options for 'ilamp'.
 Usage: ${BASENAME} <create|delete> <user_name>
 "
 if test "${1}" = "-h" -o "${1}" = "--help"
@@ -26,39 +26,39 @@ notice ()
 	return 0
 }
 
-create_folders ()
+create_user ()
 {
-	notice "Create folders for site"
-	USER="${1}"
-	for COMMAND in \
-"/usr/bin/mkdir -m 750 /srv/${USER}" \
-"/usr/bin/chown root:${USER} /srv/${USER}" \
-"/usr/bin/mkdir -m 750 /srv/${USER}/log" \
-"/usr/bin/chown root:${USER} /srv/${USER}/log" \
-"/usr/bin/mkdir -m 770 /srv/${USER}/www" \
-"/usr/bin/chown root:${USER} /srv/${USER}/www" \
-"/usr/bin/mkdir -m 770 /srv/${USER}/mail" \
-"/usr/bin/chown root:${USER} /srv/${USER}/mail"
-	do
-		echo "${COMMAND}"
-		$COMMAND
-		if test $? -ne 0
-		then
-			error "exec ${COMMAND} error"
-			return 255
-		fi
-	done
+	notice "Create user on system"
+	LOGIN="${1}"
+	COMMAND="/usr/sbin/useradd \
+		--comment '' \
+		--home-dir /srv/${LOGIN}/home \
+		-K USERGROUPS_ENAB=yes -K UID_MIN=33000 -K GID_MIN=33000 \
+		--no-create-home \
+		--shell /usr/sbin/nologin \
+		--user-group \
+		${LOGIN}
+	"
+	echo $COMMAND
+	$COMMAND
+	if test $? -ne 0
+	then
+		error "Can't create user on system"
+		return 255
+	fi
 	return 0
 }
 
-delete_folders ()
+delete_user ()
 {
-	notice "Delete site folders"
-	USER="${1}"
-	/usr/bin/rm -r -v /srv/${USER}
+	notice "Delete user from system"
+	LOGIN="${1}"
+	COMMAND="/usr/sbin/userdel ${LOGIN}"
+	echo $COMMAND
+	$COMMAND
 	if test $? -ne 0
 	then
-		echo "Can't delete folders"
+		error "Can't delete user from system"
 		return 255
 	fi
 	return 0
@@ -78,7 +78,7 @@ case ${1} in
 			exit 255
 		fi
 		
-		create_folders "${2}"
+		create_user "${2}"
 		
 		;;
 	"delete")
@@ -88,7 +88,7 @@ case ${1} in
 			exit 255
 		fi
 		
-		delete_folders "${2}"
+		delete_user "${2}"
 		
 		;;
 	*)

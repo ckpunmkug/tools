@@ -1,5 +1,2 @@
-export XAUTHORITY="/var/local/Xauthority"
-export DISPLAY=":1.0"
-
-/usr/bin/xfce4-terminal &
+/usr/bin/dbus-run-session /usr/bin/xfce4-terminal
 

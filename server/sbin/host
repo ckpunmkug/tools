@@ -1,0 +1,186 @@
+#!/usr/bin/php
+<?php
+
+define('BASENAME', basename(__FILE__));
+
+if($argv[1] == '-h' || $argv[1] == '--help')
+{//{{{//
+
+	$basename = BASENAME;
+	$help = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+Description: Create virtual host in apache2.
+Usage: {$basename} <create|delete> <user>
+
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+	echo($help);
+	exit(0);
+	
+}//}}}//
+
+function error(string $message)
+{//{{{//
+	
+	$message = 'Error: '.BASENAME." - ${message}";
+	file_put_contents('php://stderr', "{$message}\n");
+	
+}//}}}//
+
+function create_host(string $user)
+{//{{{//
+	
+	$host = "{$user}.localhost";
+	$group = $user;
+	
+	$command = 
+		'openssl req -x509 -nodes -days 365 -newkey rsa:2048'
+		." -keyout /etc/ssl/private/{$host}.key"
+		." -out /etc/ssl/certs/{$host}.crt"
+		." -subj '/C=US/ST=State/L=City/O=Organization/OU=Unit/CN={$host}'"
+	;
+	system($command);
+	
+	$virtual_host = 
+///////////////////////////////////////////////////////////////{{{//
+<<<HEREDOC
+<VirtualHost 127.0.0.1:443>
+	ServerName {$host}
+	AssignUserID {$user} {$group}
+	ServerAdmin webmaster@localhost
+
+	DocumentRoot /srv/{$user}/www
+	ErrorLog /srv/{$user}/log/error.log
+	CustomLog /srv/{$user}/log/access.log combined
+
+	<Directory /srv/{$user}/www>
+		AllowOverride All
+	</Directory>
+
+	SSLEngine on
+	SSLCertificateFile      /etc/ssl/certs/{$host}.crt
+	SSLCertificateKeyFile	/etc/ssl/private/{$host}.key
+</VirtualHost>
+
+HEREDOC;
+///////////////////////////////////////////////////////////////}}}//
+
+	$path = "/etc/apache2/sites-available/{$host}.conf";
+	$return = file_put_contents($path, $virtual_host);
+	if(!is_int($return)) {
+		error("Can't create virtual host file");
+		exit(255);
+	}
+	
+	$command = "/usr/sbin/a2ensite {$host}";
+	system($command);
+	
+	$contents = file_get_contents('/etc/hosts');
+	if(!is_string($contents)) {
+		error("Can't load hosts");
+		exit(255);
+	}
+	$LINE = explode("\n", $contents);
+	
+	$pattern = '/^127\.0\.0\.1\s+'.preg_quote($host).'$/';
+	foreach($LINE as $key => $line) {
+		$line = trim($line);
+		if(preg_match($pattern, $line) != 1) continue;
+		unset($LINE[$key]);
+	}
+	array_push($LINE, "127.0.0.1\t{$host}");
+	
+	$contents = implode("\n", $LINE);
+	$return = file_put_contents('/etc/hosts', $contents);
+	if(!is_int($return)) {
+		error("Can't save hosts");
+		exit(255);
+	}
+	
+	return(true);
+	
+}//}}}//
+
+function delete_host(string $user)
+{//{{{//
+	
+	$host = "{$user}.localhost";
+	$group = $user;
+	
+	$command = "/usr/sbin/a2dissite {$host}";
+	system($command);
+	
+	$FILE = [
+		"/etc/ssl/private/{$host}.key",
+		"/etc/ssl/certs/{$host}.crt",
+		"/etc/apache2/sites-available/{$host}.conf",
+	];
+	
+	foreach($FILE as $file) {
+		if(!file_exists($file)) continue;
+		
+		$return = unlink($file);
+		if(!$return) {
+			error("Can't delete file");
+			exit(255);
+		}
+	}
+	
+	$contents = file_get_contents('/etc/hosts');
+	if(!is_string($contents)) {
+		error("Can't load hosts");
+		exit(255);
+	}
+	$LINE = explode("\n", $contents);
+	
+	$pattern = '/^127\.0\.0\.1\s+'.preg_quote($host).'$/';
+	foreach($LINE as $key => $line) {
+		$line = trim($line);
+		if(preg_match($pattern, $line) != 1) continue;
+		unset($LINE[$key]);
+	}
+	
+	$contents = implode("\n", $LINE);
+	$return = file_put_contents('/etc/hosts', $contents);
+	if(!is_int($return)) {
+		error("Can't save hosts");
+		exit(255);
+	}
+	
+	return(true);
+	
+}//}}}//
+
+if(!isset($argv[1])) {
+	error("Command is not passed");
+	exit(255);
+}
+
+switch($argv[1])
+{//{{{//
+
+	case("create"):
+	if(!isset($argv[2])) {
+		error("User is not passed");
+		exit(255);
+	}
+	create_host($argv[2]);
+	break;
+	
+	case("delete"):
+	if(!isset($argv[2])) {
+		error("User is not passed");
+		exit(255);
+	}
+	delete_host($argv[2]);
+	break;
+	
+	default:
+	error("Unsupported command");
+	exit(255);
+	
+}//}}}//
+
+exit(0);
+

@@ -116,7 +116,7 @@ class Player
 		$offset = strval($this->position["offset"]);
 		$this->start = time();
 		
-		$command = "mplayer -msglevel all=-1 -ss {$offset} {$file}";
+		$command = "mplayer -ss {$offset} {$file}";
 		system($command);
 	}
 }

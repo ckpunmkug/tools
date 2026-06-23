@@ -6,7 +6,7 @@ BASENAME=`basename ${FILE}`
 
 HELP="
 Description: Create database and user in mariadb.
-Usage: ${BASENAME} <create|delete> <database> <user> <password>
+Usage: ${BASENAME} <create|delete> <database>
 "
 if test "${1}" = "-h" -o "${1}" = "--help"
 then
@@ -31,14 +31,13 @@ create_database ()
 	notice "Create database and user in mariadb"
 	
 	DATABASE="${1}"
-	USER="${2}"
-	PASSWORD="${3}"
-	### /usr/bin/apg -n 1 -m 8 -x 8 -M NCL	
+	USER="${1}"
+	PASSWORD=`/usr/bin/apg -n 1 -m 8 -x 8 -M NCL`
 
 	QUERY="
-CREATE DATABASE \`${DATABASE}\`;
-CREATE USER \`${USER}\`@\`localhost\` IDENTIFIED BY '${PASSWORD}';
-GRANT ALL ON \`${DATABASE}\`.* TO \`${USER}\`@\`localhost\`;
+CREATE DATABASE ${DATABASE};
+CREATE USER '${USER}'@'localhost' IDENTIFIED BY '${PASSWORD}';
+GRANT ALL ON ${DATABASE}.* TO '${USER}'@'localhost';
 "
 	/usr/bin/echo "${QUERY}" | /usr/bin/mysql -v
 	if test $? -ne 0
@@ -46,6 +45,15 @@ GRANT ALL ON \`${DATABASE}\`.* TO \`${USER}\`@\`localhost\`;
 		error "Can't create database or user"
 		return 255
 	fi
+	
+	echo "
+Database created
+
+name: ${DATABASE}
+user: ${USER}
+password: ${PASSWORD}
+
+"
 	return 0
 }
 
@@ -54,22 +62,30 @@ delete_database ()
 	notice "Delete database and user from mariadb"
 	
 	DATABASE="${1}"
-	USER="${2}"
+	USER="${1}"
 	STATUS=0
 	
-	QUERY="DROP DATABASE \`${DATABASE}\`;"
+	QUERY="REVOKE ALL ON ${DATABASE}.* FROM '${USER}'@'localhost';"
 	/usr/bin/echo "${QUERY}" | /usr/bin/mysql -v
 	if test $? -ne 0
 	then
-		error "Can't delete database"
+		error "Can't revoke on database"
 		STATUS=255
 	fi
 	
-	QUERY="DROP USER \`${USER}\`@\`localhost\`;"
+	QUERY="DROP USER '${USER}'@'localhost';"
 	/usr/bin/echo "${QUERY}" | /usr/bin/mysql -v
 	if test $? -ne 0
 	then
-		error "Can't delete user"
+		error "Can't drop user"
+		STATUS=255
+	fi
+	
+	QUERY="DROP DATABASE ${DATABASE};"
+	/usr/bin/echo "${QUERY}" | /usr/bin/mysql -v
+	if test $? -ne 0
+	then
+		error "Can't drop database"
 		STATUS=255
 	fi
 	
@@ -89,18 +105,8 @@ case ${1} in
 			error "Database name is not passed"
 			exit 255
 		fi
-		if test -z "${3}"
-		then
-			error "User name is not passed"
-			exit 255
-		fi
-		if test -z "${4}"
-		then
-			error "Password is not passed"
-			exit 255
-		fi
 		
-		create_database "${2}" "${3}" "${4}"
+		create_database "${2}"
 		
 		;;
 	"delete")
@@ -109,13 +115,8 @@ case ${1} in
 			error "Database name is not passed"
 			exit 255
 		fi
-		if test -z "${3}"
-		then
-			error "User name is not passed"
-			exit 255
-		fi
 		
-		delete_database "${2}" "${3}"
+		delete_database "${2}"
 		
 		;;
 	*)
